@@ -17,4 +17,52 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
-type cell struct{}
+// cell represents a single cell in the sudoku board
+type cell struct {
+	value     int8
+	observers map[string]cellObserver
+}
+
+// addObserver adds am observer to the observers map. ID is a string that
+// should uniquely identify the `newObserver`
+func (c *cell) addObserver(id string, newObserver cellObserver) error {
+
+	if _, ok := c.observers[id]; ok {
+		return logErr(cellObserverAlreadyRegistered, id)
+	}
+
+	c.observers[id] = newObserver
+
+	return nil
+}
+
+// rmObserver removes an observer from the observers map. The id is used
+// to identify the target observer
+func (c *cell) rmObserver(id string) error {
+
+	if _, ok := c.observers[id]; !ok {
+		return logErr(cellObserverNotFound, id)
+	}
+
+	delete(c.observers, id)
+
+	return nil
+}
+
+// notifyAll sends a notification of update to all observers.
+func (c *cell) notifyAll() {
+
+	for _, obs := range c.observers {
+		obs.notify()
+	}
+}
+
+// update the value of the cell
+func (c *cell) update(newValue int8) {
+	c.value = newValue
+}
+
+// get returns the current value of the cell
+func (c *cell) get() int8 {
+	return c.value
+}
