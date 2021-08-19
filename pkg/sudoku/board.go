@@ -25,9 +25,9 @@ import (
 
 // Complete sudoku board
 type SudokuBoard struct {
-	boxContainer    [3][3]SudokuContainer
-	columnContainer [9]SudokuContainer
-	rowContainer    [9]SudokuContainer
+	boxContainer    [3][3]container
+	columnContainer [9]container
+	rowContainer    [9]container
 	board           *[][]byte
 	possibleValues  [9][9][]string
 }
@@ -94,9 +94,9 @@ func (sc *SudokuBoard) addIdToContainers() {
 }
 
 func (sc *SudokuBoard) createBoard(board *[][]byte) {
-	sc.boxContainer = [3][3]SudokuContainer{}
-	sc.columnContainer = [9]SudokuContainer{}
-	sc.rowContainer = [9]SudokuContainer{}
+	sc.boxContainer = [3][3]container{}
+	sc.columnContainer = [9]container{}
+	sc.rowContainer = [9]container{}
 	sc.board = board
 	sc.addIdToContainers()
 
@@ -135,24 +135,24 @@ func (sc *SudokuBoard) isValid() bool {
 	return true
 }
 
-func (sc *SudokuBoard) updatePossibleValues() {
-	for i := 0; i < 9; i++ {
-		for j := 0; j < 9; j++ {
-			if string(sc.board[i][j]) != "." {
-				continue
-			}
+// func (sc *SudokuBoard) updatePossibleValues() {
+// 	for i := 0; i < 9; i++ {
+// 		for j := 0; j < 9; j++ {
+// 			if string(sc.board[i][j]) != "." {
+// 				continue
+// 			}
 
-			iIndexBox := i / 3
-			jIndexBox := j / 3
+// 			iIndexBox := i / 3
+// 			jIndexBox := j / 3
 
-			boxPossibleValues := sc.boxContainer[iIndexBox][jIndexBox].getPossibleValues()
-			columnPossibleValues := sc.columnContainer[j].getPossibleValues()
-			rowPossibleValues := sc.rowContainer[i].getPossibleValues()
+// 			boxPossibleValues := sc.boxContainer[iIndexBox][jIndexBox].getPossibleValues()
+// 			columnPossibleValues := sc.columnContainer[j].getPossibleValues()
+// 			rowPossibleValues := sc.rowContainer[i].getPossibleValues()
 
-			result := []string{}
-		}
-	}
-}
+// 			result := []string{}
+// 		}
+// 	}
+// }
 
 func (sc *SudokuBoard) addRestrictedToContainer(i, j int, value string) {
 	iIndexBox := i / 3

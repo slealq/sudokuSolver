@@ -19,13 +19,28 @@ package sudoku
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
+
+func printSudoku(board [][]byte) string {
+
+	var sb strings.Builder
+
+	for _, row := range board {
+		for _, value := range row {
+			fmt.Fprintf(&sb, "%s ", string(value))
+		}
+		fmt.Fprintf(&sb, "\n")
+	}
+
+	return sb.String()
+}
 
 func isValidSudoku(board [][]byte) bool {
 
 	sudoku := SudokuBoard{}
-	sudoku.createBoard(board)
+	sudoku.createBoard(&board)
 
 	return sudoku.isValid()
 
