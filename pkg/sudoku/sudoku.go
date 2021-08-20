@@ -39,7 +39,7 @@ func printSudoku(board [][]byte) string {
 
 func isValidSudoku(board [][]byte) bool {
 
-	sudoku := SudokuBoard{}
+	sudoku := Board{}
 	sudoku.createBoard(&board)
 
 	return sudoku.isValid()
@@ -133,7 +133,7 @@ func getKeysFromRestricted(restricted map[string]Point) []string {
 func solveSudoku(board [][]byte) {
 	start := time.Now()
 
-	sudoku := SudokuBoard{}
+	sudoku := Board{}
 	sudoku.createBoard(&board)
 
 	// fmt.Printf("Spaces left: %d\n", sudoku.spacesLeft())
