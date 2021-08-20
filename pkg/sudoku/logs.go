@@ -17,16 +17,75 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
-import "fmt"
-
-var (
-	// cell.go
-	cellObserverAlreadyRegistered = "The observer id %s has already been registered"
-	cellObserverNotFound          = "The observer id %s was not found"
+import (
+	"fmt"
+	"log"
+	"os"
 )
 
-func logErr(msg string, args ...interface{}) error {
-	// Any logging mecanism go here
+type logHandler struct {
+	Info  *log.Logger
+	Warn  *log.Logger
+	Error *log.Logger
+}
 
-	return fmt.Errorf(msg, args...)
+// logHandler singleton makes sure all loggers use the same Loggers
+var sLogHandler *logHandler
+
+// init initializes the sLogHandler singleton, which is used by all loggers
+func initLogHandler() {
+	sLogHandler = &logHandler{}
+
+	file, err := os.OpenFile(LOG_FILENAME, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sLogHandler.Info =
+		log.New(file, INFO_HEADER, log.Ldate|log.Ltime|log.Lshortfile)
+	sLogHandler.Warn =
+		log.New(file, WARNING_HEADER, log.Ldate|log.Ltime|log.Lshortfile)
+	sLogHandler.Error =
+		log.New(file, ERROR_HEADER, log.Ldate|log.Ltime|log.Lshortfile)
+}
+
+// logger has the complete information in order to log information to the
+// log file. If no sLogHandler singleton is not initialized, then creating
+// logs is meant to fail
+type logger struct {
+	logMsg     string
+	logHandler *logHandler
+}
+
+// newLog creates a new logger given the message provided
+func newLog(msg string, args ...interface{}) logger {
+
+	// Check that sLogHandler has been initialized, if not do so.
+	if sLogHandler == nil {
+		initLogHandler()
+	}
+
+	// Create the new logger and return it
+	return logger{
+		logMsg:     fmt.Sprintf(msg, args...),
+		logHandler: sLogHandler,
+	}
+}
+
+// Error logs an error message using the sLogHandler which should be a
+// singleton
+func (l *logger) Error() {
+	l.logHandler.Error.Println(l.logMsg)
+}
+
+// Info logs an info message using the sLogHandler which should be a
+// singleton
+func (l *logger) Info() {
+	l.logHandler.Info.Println(l.logMsg)
+}
+
+// Warn logs an warning message using the sLogHandler which should be a
+// singleton
+func (l *logger) Warn() {
+	l.logHandler.Warn.Println(l.logMsg)
 }

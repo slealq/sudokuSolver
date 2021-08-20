@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
+import "fmt"
+
 // cell represents a single cell in the sudoku board
 type cell struct {
 	value     int8
@@ -28,7 +30,7 @@ type cell struct {
 func (c *cell) addObserver(id string, newObserver cellObserver) error {
 
 	if _, ok := c.observers[id]; ok {
-		return logErr(cellObserverAlreadyRegistered, id)
+		return fmt.Errorf(cellObserverAlreadyRegistered, id)
 	}
 
 	c.observers[id] = newObserver
@@ -41,7 +43,7 @@ func (c *cell) addObserver(id string, newObserver cellObserver) error {
 func (c *cell) rmObserver(id string) error {
 
 	if _, ok := c.observers[id]; !ok {
-		return logErr(cellObserverNotFound, id)
+		return fmt.Errorf(cellObserverNotFound, id)
 	}
 
 	delete(c.observers, id)
