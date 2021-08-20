@@ -34,6 +34,44 @@ type Board struct {
 	debug           bool
 }
 
+// newBoard creates a new board, instanciates containers, adds ids to them
+// and finally add values to each container
+func newBoard(data *[][]byte) *Board {
+
+	b := &Board{}
+
+	// TODO: Maybe just enable with debug info
+	b.history = history{Capacity: 20}
+
+	b.boxContainer = [3][3]container{}
+	b.columnContainer = [9]container{}
+	b.rowContainer = [9]container{}
+	b.data = data
+	b.addIdToContainers()
+
+	for i, row := range *data {
+		for j, ijthValue := range row {
+			b.addToContainers(i, j, string(ijthValue))
+		}
+	}
+
+	return b
+}
+
+// addToContainers add each specific cell to all the containers that should
+// track it
+func (b *Board) addToContainers(i, j int, value string) {
+	iIndexBox := i / 3
+	jIndexBox := j / 3
+
+	b.boxContainer[iIndexBox][jIndexBox].add(i, j, value)
+	b.columnContainer[j].add(i, j, value)
+	b.rowContainer[i].add(i, j, value)
+
+	// Update restricted values
+	// b.boxContainer[iIndexBox][jIndexBox].
+}
+
 // updateHistory adds a new entry to the history if debug flag is enabled
 func (b *Board) updateHistory() {
 	if b.debug {
@@ -82,18 +120,6 @@ func (b *Board) rmRestrictedFromContainers(i, j int, value string) {
 	}
 }
 
-func (b *Board) addToContainers(i, j int, value string) {
-	iIndexBox := i / 3
-	jIndexBox := j / 3
-
-	b.boxContainer[iIndexBox][jIndexBox].add(i, j, value)
-	b.columnContainer[j].add(i, j, value)
-	b.rowContainer[i].add(i, j, value)
-
-	// Update restricted values
-	// b.boxContainer[iIndexBox][jIndexBox].
-}
-
 func (b *Board) addIdToContainers() {
 	for i := 0; i < 9; i++ {
 		b.rowContainer[i].addID(fmt.Sprintf("row: %d", i))
@@ -103,23 +129,6 @@ func (b *Board) addIdToContainers() {
 	}
 	for j := 0; j < 9; j++ {
 		b.columnContainer[j].addID(fmt.Sprintf("col: %d", j))
-	}
-}
-
-func (b *Board) createBoard(Board *[][]byte) {
-	// TODO: Maybe just enable with debug info
-	b.history = history{Capacity: 20}
-
-	b.boxContainer = [3][3]container{}
-	b.columnContainer = [9]container{}
-	b.rowContainer = [9]container{}
-	b.data = Board
-	b.addIdToContainers()
-
-	for i, row := range *Board {
-		for j, ijthValue := range row {
-			b.addToContainers(i, j, string(ijthValue))
-		}
 	}
 }
 

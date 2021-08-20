@@ -22,16 +22,15 @@ import (
 	"time"
 )
 
-func isValidSudoku(board [][]byte) bool {
+func isValidSudoku(data [][]byte) bool {
 
-	sudoku := Board{}
-	sudoku.createBoard(&board)
+	board := newBoard(&data)
 
-	return sudoku.isValid()
+	return board.isValid()
 
-	// boxContainer := [3][3]SudokuContainer{}
-	// columnContainer := [9]SudokuContainer{}
-	// rowContainer := [9]SudokuContainer{}
+	// boxContainer := [3][3]boardContainer{}
+	// columnContainer := [9]boardContainer{}
+	// rowContainer := [9]boardContainer{}
 
 	// for i, row := range board {
 	//     for j, ijthValue := range row {
@@ -115,28 +114,28 @@ func getKeysFromRestricted(restricted map[string]Point) []string {
 	return keys
 }
 
-func solveSudoku(board [][]byte) {
+func solveSudoku(data [][]byte) {
 	start := time.Now()
 
-	sudoku := Board{debug: true}
-	sudoku.createBoard(&board)
+	board := newBoard(&data)
+	board.debug = true
 
-	// fmt.Printf("Spaces left: %d\n", sudoku.spacesLeft())
+	// fmt.Printf("Spaces left: %d\n", board.spacesLeft())
 	filled := false
-	for sudoku.spacesLeft() != 0 {
-		sudoku.calculatePossibleValues()
+	for board.spacesLeft() != 0 {
+		board.calculatePossibleValues()
 		for i := 0; i < 9; i++ {
 			for j := 0; j < 9; j++ {
-				psv := sudoku.getPossibleValues(i, j)
+				psv := board.getPossibleValues(i, j)
 
 				if len(psv) == 1 {
 					filled = true
-					sudoku.add(i, j, psv[0])
+					board.add(i, j, psv[0])
 					// fmt.Printf("Filling place %d, %d with value: %s\n", i, j, psv[0])
-					// fmt.Printf("Results is: %v\n", sudoku.getBoard())
+					// fmt.Printf("Results is: %v\n", board.getBoard())
 				}
 
-				boxRestricted := sudoku.getUniqueRestrictedFromBox(i, j)
+				boxRestricted := board.getUniqueRestrictedFromBox(i, j)
 				if len(boxRestricted) == 1 {
 					// fmt.Printf("Box restricted values : %d, %d, %v\n", i/3, j/3, boxRestricted)
 					value := getKeysFromRestricted(boxRestricted)[0]
@@ -144,11 +143,11 @@ func solveSudoku(board [][]byte) {
 
 					// fmt.Printf("B Want to fill: %s, in pos %d, %d\n", value, point.X, point.Y)
 
-					sudoku.add(point.X, point.Y, value)
+					board.add(point.X, point.Y, value)
 					filled = true
 				}
 
-				rowRestricted := sudoku.getUniqueRestrictedFromRow(i)
+				rowRestricted := board.getUniqueRestrictedFromRow(i)
 				if len(rowRestricted) == 1 {
 					// fmt.Printf("Row restricted values : %d, %v\n", i, rowRestricted)
 					value := getKeysFromRestricted(rowRestricted)[0]
@@ -156,11 +155,11 @@ func solveSudoku(board [][]byte) {
 
 					// fmt.Printf("R Want to fill: %s, in pos %d, %d\n", value, point.X, point.Y)
 
-					sudoku.add(point.X, point.Y, value)
+					board.add(point.X, point.Y, value)
 					filled = true
 				}
 
-				colRestricted := sudoku.getUniqueRestrictedFromCol(j)
+				colRestricted := board.getUniqueRestrictedFromCol(j)
 				if len(colRestricted) == 1 {
 					// fmt.Printf("Col restricted values : %d, %v\n", j, colRestricted)
 					value := getKeysFromRestricted(colRestricted)[0]
@@ -168,27 +167,27 @@ func solveSudoku(board [][]byte) {
 
 					// fmt.Printf("C Want to fill: %s, in pos %d, %d\n", value, point.X, point.Y)
 
-					sudoku.add(point.X, point.Y, value)
+					board.add(point.X, point.Y, value)
 					filled = true
 				}
 			}
 		}
 
-		//         fmt.Printf("%v\n", sudoku.String())
+		//         fmt.Printf("%v\n", board.String())
 
-		//         fmt.Printf("Is valid sudoku? :%t\n", sudoku.isValid())
+		//         fmt.Printf("Is valid board? :%t\n", board.isValid())
 
 		if !filled {
-			aLog := newLog(callingBacktracking, sudoku.isValid(), sudoku.String())
+			aLog := newLog(callingBacktracking, board.isValid(), board.String())
 			aLog.Info()
 
-			sudoku.Backtrack()
+			board.Backtrack()
 			break
 		}
 		filled = false
 	}
 
-	// board = (*sudoku.getBoard())
+	// board = (*board.getBoard())
 
 	// Code to measure
 	duration := time.Since(start)
