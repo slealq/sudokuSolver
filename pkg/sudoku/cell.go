@@ -21,8 +21,16 @@ import "fmt"
 
 // cell represents a single cell in the sudoku board
 type cell struct {
-	value     int8
+	value     byte
 	observers map[string]cellObserver
+}
+
+// newCell returns a new cell, with the observers map initialized
+func newCell() cell {
+	aCell := cell{}
+	aCell.observers = make(map[string]cellObserver)
+
+	return aCell
 }
 
 // addObserver adds am observer to the observers map. ID is a string that
@@ -59,12 +67,14 @@ func (c *cell) notifyAll() {
 	}
 }
 
-// update the value of the cell
-func (c *cell) update(newValue int8) {
+// update the value of the cell, and notify all observers about the change
+func (c *cell) update(newValue byte) {
 	c.value = newValue
+
+	c.notifyAll()
 }
 
 // get returns the current value of the cell
-func (c *cell) get() int8 {
+func (c *cell) get() byte {
 	return c.value
 }
