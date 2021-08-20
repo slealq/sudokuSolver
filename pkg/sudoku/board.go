@@ -30,6 +30,15 @@ type Board struct {
 	rowContainer    [9]container
 	data            *[][]byte
 	possibleValues  [9][9][]string
+	history         history
+	debug           bool
+}
+
+// updateHistory adds a new entry to the history if debug flag is enabled
+func (b *Board) updateHistory() {
+	if b.debug {
+		b.history.push(*b.data)
+	}
 }
 
 func (b *Board) add(i, j int, value string) {
@@ -44,6 +53,8 @@ func (b *Board) simpleAdd(i, j int, value string) {
 	b.rowContainer[i].simpleAdd(i, j, value)
 
 	(*b.data)[i][j] = byte(value[0])
+
+	b.updateHistory()
 }
 
 func (b *Board) simpleRm(i, j int, value string) {
@@ -52,6 +63,8 @@ func (b *Board) simpleRm(i, j int, value string) {
 	b.rowContainer[i].simpleRm(i, j, value)
 
 	(*b.data)[i][j] = byte("."[0])
+
+	b.updateHistory()
 }
 
 func (b *Board) rmRestrictedFromContainers(i, j int, value string) {
@@ -94,6 +107,9 @@ func (b *Board) addIdToContainers() {
 }
 
 func (b *Board) createBoard(Board *[][]byte) {
+	// TODO: Maybe just enable with debug info
+	b.history = history{Capacity: 10}
+
 	b.boxContainer = [3][3]container{}
 	b.columnContainer = [9]container{}
 	b.rowContainer = [9]container{}
@@ -270,11 +286,18 @@ func (b *Board) ReverseTranslation(translation Fill) {
 	b.simpleRm(translation.point.X, translation.point.Y, strconv.Itoa(translation.value))
 }
 
+// Backtrack performs a backtracking algorithm to the current board values,
+// in which it tests values and goes backwards if it reaches a point where the
+// values make the board invalid. Backtracking should end when all the cells
+// in the board are filled
 func (b *Board) Backtrack() {
 	translationInOrder := []Fill{}
 
 	//currentValue := 0
 	currentPos := 0
+	// Backtracked flag is turned on when a maximum value has been reached
+	// for certain position, and we must go back to the previous to increase
+	// it's value
 	BackTracked := false
 
 	for b.spacesLeft() != 0 || b.isValid() == false {
@@ -294,7 +317,10 @@ func (b *Board) Backtrack() {
 			BackTracked = true
 			if translationInOrder[currentPos].value == 9 {
 				if len(translationInOrder) <= 1 {
-					fmt.Printf("Backtracking went wrong\n")
+
+					aLog := newLog(backTrackWentWrong, b.debug,
+						b.history.String())
+					aLog.Error()
 					break
 				}
 				// remove this element
@@ -311,10 +337,10 @@ func (b *Board) Backtrack() {
 			b.ApplyTranslation(translationInOrder[currentPos])
 		}
 
-		//         fmt.Printf("Filled: %d\n", len(translationInOrder))
+		// fmt.Printf("Filled: %d\n", len(translationInOrder))
 
-		//         fmt.Printf("Backtracing\n")
-		//         fmt.Printf("%s\n", b.String())
+		// fmt.Printf("Backtracing\n")
+		// fmt.Printf("%s\n", b.String())
 
 		// fill first place that is emtpy
 		// check if its valid

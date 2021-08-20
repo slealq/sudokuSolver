@@ -19,23 +19,8 @@ package sudoku
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
-
-func printSudoku(board [][]byte) string {
-
-	var sb strings.Builder
-
-	for _, row := range board {
-		for _, value := range row {
-			fmt.Fprintf(&sb, "%s ", string(value))
-		}
-		fmt.Fprintf(&sb, "\n")
-	}
-
-	return sb.String()
-}
 
 func isValidSudoku(board [][]byte) bool {
 
@@ -133,7 +118,7 @@ func getKeysFromRestricted(restricted map[string]Point) []string {
 func solveSudoku(board [][]byte) {
 	start := time.Now()
 
-	sudoku := Board{}
+	sudoku := Board{debug: true}
 	sudoku.createBoard(&board)
 
 	// fmt.Printf("Spaces left: %d\n", sudoku.spacesLeft())

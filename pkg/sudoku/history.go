@@ -22,38 +22,56 @@ import (
 	"strings"
 )
 
-// sudokuRepr is a representation of the board in string
-type sudokuRepr string
-
 // history holds a finite amount of representations of the sudoku board, in
 // order to be print for logging
 type history struct {
-	buffer   []sudokuRepr
+	buffer   [][][]byte
 	size     int
 	Capacity int
 }
 
-// get returns a string representation of the last elements defined in the
+// String returns a string representation of the last elements defined in the
 // size value
-func (h *history) get() string {
+func (h *history) String() string {
 	var sb strings.Builder
 
 	for _, entry := range h.buffer {
-		fmt.Fprintf(&sb, "%s\n", entry)
+		fmt.Fprintf(&sb, "%s\n", printSudoku(&entry))
 	}
 
 	return sb.String()
 }
 
+// copyData copies the input data to a result variable, copiying each row
+// individually
+func (h *history) copyData(result *[][]byte, input [][]byte) {
+
+	*result = make([][]byte, 0, ROW_LENGTH)
+
+	// copy each row to avoid sharing the same underlying information
+	for _, row := range input {
+		newRow := make([]byte, COLUMN_LENGTH)
+
+		copy(newRow, row)
+
+		*result = append(*result, newRow)
+	}
+}
+
 // push adds a new element to the history
-func (h *history) push(r sudokuRepr) {
+func (h *history) push(data [][]byte) {
+
+	// create copy of data for storage
+	var newData [][]byte
+	h.copyData(&newData, data)
+
 	if h.Capacity > h.size {
-		h.buffer = append(h.buffer, r)
+		h.buffer = append(h.buffer, newData)
 	} else {
 		// remove first element
 		h.buffer = h.buffer[1:]
 		// add to the end
-		h.buffer = append(h.buffer, r)
+		h.buffer = append(h.buffer, newData)
 	}
 
 	h.size++

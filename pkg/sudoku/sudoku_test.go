@@ -57,5 +57,5 @@ func TestSudokuSolver(t *testing.T) {
 
 	solveSudoku(board)
 
-	t.Errorf("\nSolved sudoku is:\n%v", printSudoku(board))
+	t.Errorf("\nSolved sudoku is:\n%v", printSudoku(&board))
 }

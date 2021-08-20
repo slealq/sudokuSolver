@@ -17,29 +17,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
-var (
-	SMALL_SQUARE_SIZE = 3
-	ROW_LENGTH        = 9
-	COLUMN_LENGTH     = 9
+import (
+	"fmt"
+	"strings"
 )
 
-var allValues = map[string]bool{"1": true,
-	"2": true,
-	"3": true,
-	"4": true,
-	"5": true,
-	"6": true,
-	"7": true,
-	"8": true,
-	"9": true,
-}
+// printSudoku takes a boardData as input, and returns a string representation
+// of the board
+func printSudoku(board *[][]byte) string {
 
-type Point struct {
-	X int
-	Y int
-}
+	var sb strings.Builder
 
-type Fill struct {
-	value int
-	point Point
+	for _, row := range *board {
+		for _, value := range row {
+			fmt.Fprintf(&sb, "%s ", string(value))
+		}
+		fmt.Fprintf(&sb, "\n")
+	}
+
+	return sb.String()
 }
