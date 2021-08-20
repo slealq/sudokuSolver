@@ -108,7 +108,7 @@ func (b *Board) addIdToContainers() {
 
 func (b *Board) createBoard(Board *[][]byte) {
 	// TODO: Maybe just enable with debug info
-	b.history = history{Capacity: 10}
+	b.history = history{Capacity: 20}
 
 	b.boxContainer = [3][3]container{}
 	b.columnContainer = [9]container{}
@@ -225,7 +225,7 @@ func (b *Board) calculatePossibleValuesInCoordinate(i, j int) *[]string {
 	rowPossibleValues := b.rowContainer[i].getPossibleValues()
 
 	result := []string{}
-	for value, _ := range allValues {
+	for value := range allValues {
 		if (*boxPossibleValues)[value] && (*columnPossibleValues)[value] && (*rowPossibleValues)[value] {
 			result = append(result, value)
 		}
@@ -291,31 +291,53 @@ func (b *Board) ReverseTranslation(translation Fill) {
 // values make the board invalid. Backtracking should end when all the cells
 // in the board are filled
 func (b *Board) Backtrack() {
-	translationInOrder := []Fill{}
+	// Check board is valid before calling backtracking, otherwise it will
+	// never be able to solve
+	if !b.isValid() {
+		aLog := newLog(cannotBacktrack, b.String())
+		aLog.Error()
+		return
+	}
 
-	//currentValue := 0
-	currentPos := 0
-	// Backtracked flag is turned on when a maximum value has been reached
-	// for certain position, and we must go back to the previous to increase
-	// it's value
-	BackTracked := false
+	// Holds the translations made, so they can be reversed if required
+	translationInOrder := []Fill{}
+	currentTrans := 0
+
+	// newPos flag is turned on when the current position hasn't begun
+	// testing new numbers yet. Meaning we are arriving at this position for
+	// the first time.
+	newPos := false
 
 	for b.spacesLeft() != 0 || b.isValid() == false {
 
-		if !BackTracked {
+		aLog := newLog(backTrackingStats, len(translationInOrder), newPos)
+		aLog.Info()
+
+		if !newPos {
+			// since newPos flag is false, make a new Fill and add it
+			// to the translations
 			tempPoint := b.GetFirstEmptyPlace()
 			fill := Fill{value: 1, point: tempPoint}
+
 			translationInOrder = append(translationInOrder, fill)
+
 			b.ApplyTranslation(fill)
 		}
 
-		if b.isValid() && translationInOrder[currentPos].value < 9 {
+		// When it's not the first backtracking, and the board is currently
+		// valid, advance to the next position
+		if b.isValid() && translationInOrder[currentTrans].value < 9 {
 			// continue back tracking
-			currentPos++
-			BackTracked = false
-		} else {
-			BackTracked = true
-			if translationInOrder[currentPos].value == 9 {
+			currentTrans++
+			newPos = false
+
+		} else
+		// If board is not valid, then remove current translation and go
+		// backwards until a new valid position is reached
+		{
+			newPos = true
+
+			if translationInOrder[currentTrans].value == 9 {
 				if len(translationInOrder) <= 1 {
 
 					aLog := newLog(backTrackWentWrong, b.debug,
@@ -324,30 +346,23 @@ func (b *Board) Backtrack() {
 					break
 				}
 				// remove this element
-				b.ReverseTranslation(translationInOrder[currentPos])
+				b.ReverseTranslation(translationInOrder[currentTrans])
 				translationInOrder = translationInOrder[:len(translationInOrder)-1]
-				currentPos--
+				currentTrans--
 
 				// increase the value of the previous
 			}
 
-			// this needs to be done always
-			b.ReverseTranslation(translationInOrder[currentPos])
-			translationInOrder[currentPos].value++
-			b.ApplyTranslation(translationInOrder[currentPos])
+			// At this point, currentTrans should have already been decremented
+			// so it's time to increase previous value IF that value is able
+			// to increase. If not, move backwards further
+
+			// We'll reverse the translation, increase the value, and apply it
+			// back again
+			b.ReverseTranslation(translationInOrder[currentTrans])
+			translationInOrder[currentTrans].value++
+			b.ApplyTranslation(translationInOrder[currentTrans])
 		}
-
-		// fmt.Printf("Filled: %d\n", len(translationInOrder))
-
-		// fmt.Printf("Backtracing\n")
-		// fmt.Printf("%s\n", b.String())
-
-		// fill first place that is emtpy
-		// check if its valid
-		// if valid, repeat
-		// if not valid, go back one place (And remove current from map)
-		//   if previous value is 9, go back one place (and remove current from map)
-		//   if not, increase value, check if valid
 	}
 }
 
@@ -379,5 +394,5 @@ func (b *Board) String() string {
 		fmt.Fprintf(&sb, "\n")
 	}
 
-	return b.String()
+	return sb.String()
 }

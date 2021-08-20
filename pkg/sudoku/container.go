@@ -106,7 +106,7 @@ func (s *container) updatePossibleValues(value *string) {
 func (s *container) createPossibleValues() {
 	result := map[string]bool{}
 
-	for value, _ := range allValues {
+	for value := range allValues {
 		if s.numberSet[value] == 0 {
 			result[value] = true
 		}

@@ -128,9 +128,7 @@ func solveSudoku(board [][]byte) {
 		for i := 0; i < 9; i++ {
 			for j := 0; j < 9; j++ {
 				psv := sudoku.getPossibleValues(i, j)
-				if len(psv) != 0 {
-					// fmt.Printf("Posible values of %d,%d are: %v\n", i, j, psv)
-				}
+
 				if len(psv) == 1 {
 					filled = true
 					sudoku.add(i, j, psv[0])
@@ -181,8 +179,9 @@ func solveSudoku(board [][]byte) {
 		//         fmt.Printf("Is valid sudoku? :%t\n", sudoku.isValid())
 
 		if !filled {
-			// fmt.Println("Don't know how to proceed")
-			// fmt.Printf("%v\n", sudoku.String())
+			aLog := newLog(callingBacktracking, sudoku.isValid(), sudoku.String())
+			aLog.Info()
+
 			sudoku.Backtrack()
 			break
 		}
