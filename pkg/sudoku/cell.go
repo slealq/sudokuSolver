@@ -69,6 +69,27 @@ func (c *cell) notifyAll() {
 
 // update the value of the cell, and notify all observers about the change
 func (c *cell) update(newValue byte) {
+
+	allowedValues := map[byte]bool{
+		'.': true,
+		'1': true,
+		'2': true,
+		'3': true,
+		'4': true,
+		'5': true,
+		'6': true,
+		'7': true,
+		'8': true,
+		'9': true,
+	}
+
+	// panic if the cell is being updated with an invalid value
+	if _, ok := allowedValues[newValue]; !ok {
+		aLog := newLog(invalidUpdateValue, string(newValue))
+		aLog.Error()
+		panic(aLog.logMsg)
+	}
+
 	c.value = newValue
 
 	c.notifyAll()

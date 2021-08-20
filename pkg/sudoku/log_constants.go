@@ -21,6 +21,7 @@ var (
 	// cell.go
 	cellObserverAlreadyRegistered = "The observer id %s has already been registered"
 	cellObserverNotFound          = "The observer id %s was not found"
+	invalidUpdateValue            = "Invalid value for cell: %s"
 
 	// board.go
 	backTrackWentWrong = "Backtracking went wrong; debug=%v; history=\n%s"

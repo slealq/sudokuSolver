@@ -61,3 +61,19 @@ func TestObserverUpdate(t *testing.T) {
 	}
 
 }
+
+// TestInvalidUpdate verify that if an invalid value is added to a cell, the
+// update fails with a panic
+func TestInvalidUpdate(t *testing.T) {
+	aCell := newCell()
+
+	// Verify a panic is raised
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The update with invalid value did not panic")
+		}
+	}()
+
+	// The following update should panic
+	aCell.update(byte('a'))
+}
