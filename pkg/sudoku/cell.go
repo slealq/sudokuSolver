@@ -26,11 +26,12 @@ type cell struct {
 	value     byte
 	observers map[string]cellObserver
 	id        string
+	i, j      int
 }
 
 // getCellId returns an ID from coordinates given
 func getCellId(i, j int) string {
-	return fmt.Sprintf("i%dj%d", i, j)
+	return fmt.Sprintf("%di,%dj", i, j)
 }
 
 // newCell returns a new cell, with the observers map initialized
@@ -38,6 +39,8 @@ func newCell(i, j int) cell {
 
 	aCell := cell{
 		id: getCellId(i, j),
+		i:  i,
+		j:  j,
 	}
 
 	aCell.observers = make(map[string]cellObserver)
@@ -75,7 +78,7 @@ func (c *cell) rmObserver(id string) error {
 func (c *cell) notifyAll() {
 
 	for _, obs := range c.observers {
-		obs.notify()
+		obs.notify(c.id)
 	}
 }
 

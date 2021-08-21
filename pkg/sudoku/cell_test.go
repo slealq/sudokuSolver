@@ -25,7 +25,7 @@ type ObserverMock struct {
 	cellValue    byte
 }
 
-func (o *ObserverMock) notify() {
+func (o *ObserverMock) notify(cellId string) {
 	o.Notification = true
 	o.cellValue = o.cellRef.get()
 }

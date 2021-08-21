@@ -35,6 +35,12 @@ type container struct {
 	id               string
 }
 
+func (s *container) notify(cellId string) {
+	// TODO Handle the notifications from cell updates
+	aLog := newLog("test notification arrived")
+	aLog.Error()
+}
+
 func (s *container) addID(value string) {
 	s.id = value
 }

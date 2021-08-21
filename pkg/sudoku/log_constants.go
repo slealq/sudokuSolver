@@ -27,6 +27,7 @@ var (
 	backTrackWentWrong = "Backtracking went wrong; debug=%v; history=\n%s"
 	backTrackingStats  = "Backtracking translations: %d, newPos: %v"
 	cannotBacktrack    = "Cannot backtrack. Board is invalid:\n%s"
+	failedToInitCells  = "Failed initializing cells"
 
 	// sudoku.go
 	callingBacktracking = "Calling bactracking, isValid: %v, board:\n%s"

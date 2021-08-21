@@ -48,6 +48,9 @@ func newBoard(data *[][]byte) *Board {
 	b.columnContainer = [9]container{}
 	b.rowContainer = [9]container{}
 	b.data = data
+
+	b.initCells()
+
 	b.addIdToContainers()
 
 	for i, row := range *data {
@@ -62,11 +65,18 @@ func newBoard(data *[][]byte) *Board {
 // initCells creates a cell value for each of the positions in data.
 func (b *Board) initCells() {
 
+	if b.data == nil {
+		aLog := newLog(failedToInitCells)
+		aLog.Error()
+		panic(aLog.logMsg)
+	}
+
 	b.cells = [ROW_LENGTH][COLUMN_LENGTH]cell{}
 
 	for i, row := range *b.data {
 		for j, value := range row {
 			aCell := newCell(i, j)
+			b.addCellObservers(&aCell)
 
 			aCell.update(value)
 			b.cells[i][j] = aCell
@@ -74,6 +84,29 @@ func (b *Board) initCells() {
 			// TODO register observers
 		}
 	}
+}
+
+// addCellObservers Add the three corresponding observer for each a given
+// cell
+func (b *Board) addCellObservers(aCell *cell) {
+
+	iBoxIndex := aCell.i / 3
+	jBoxIndex := aCell.j / 3
+	aCell.addObserver(
+		fmt.Sprintf("box_%di_%dj", aCell.i, aCell.j),
+		&b.boxContainer[iBoxIndex][jBoxIndex],
+	)
+
+	aCell.addObserver(
+		fmt.Sprintf("row_%di", aCell.i),
+		&b.rowContainer[aCell.i],
+	)
+
+	aCell.addObserver(
+		fmt.Sprintf("col_%dj", aCell.j),
+		&b.rowContainer[aCell.j],
+	)
+
 }
 
 // addToContainers add each specific cell to all the containers that should
