@@ -17,17 +17,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // cell represents a single cell in the sudoku board
 type cell struct {
 	value     byte
 	observers map[string]cellObserver
+	id        string
+}
+
+// getCellId returns an ID from coordinates given
+func getCellId(i, j int) string {
+	return fmt.Sprintf("i%dj%d", i, j)
 }
 
 // newCell returns a new cell, with the observers map initialized
-func newCell() cell {
-	aCell := cell{}
+func newCell(i, j int) cell {
+
+	aCell := cell{
+		id: getCellId(i, j),
+	}
+
 	aCell.observers = make(map[string]cellObserver)
 
 	return aCell

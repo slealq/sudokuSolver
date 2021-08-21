@@ -37,7 +37,7 @@ var observer ObserverMock
 func TestObserverUpdate(t *testing.T) {
 
 	// Create new cell, and register observer
-	aCell := newCell()
+	aCell := newCell(0, 0)
 
 	// Create new observer, with notification off. Observer has reference
 	// to the cell
@@ -65,7 +65,7 @@ func TestObserverUpdate(t *testing.T) {
 // TestInvalidUpdate verify that if an invalid value is added to a cell, the
 // update fails with a panic
 func TestInvalidUpdate(t *testing.T) {
-	aCell := newCell()
+	aCell := newCell(0, 0)
 
 	// Verify a panic is raised
 	defer func() {

@@ -30,6 +30,7 @@ type Board struct {
 	rowContainer    [9]container
 	data            *[][]byte
 	possibleValues  [9][9][]string
+	cells           [9][9]cell
 	history         history
 	debug           bool
 }
@@ -58,6 +59,23 @@ func newBoard(data *[][]byte) *Board {
 	return b
 }
 
+// initCells creates a cell value for each of the positions in data.
+func (b *Board) initCells() {
+
+	b.cells = [ROW_LENGTH][COLUMN_LENGTH]cell{}
+
+	for i, row := range *b.data {
+		for j, value := range row {
+			aCell := newCell(i, j)
+
+			aCell.update(value)
+			b.cells[i][j] = aCell
+
+			// TODO register observers
+		}
+	}
+}
+
 // addToContainers add each specific cell to all the containers that should
 // track it
 func (b *Board) addToContainers(i, j int, value string) {
@@ -67,9 +85,6 @@ func (b *Board) addToContainers(i, j int, value string) {
 	b.boxContainer[iIndexBox][jIndexBox].add(i, j, value)
 	b.columnContainer[j].add(i, j, value)
 	b.rowContainer[i].add(i, j, value)
-
-	// Update restricted values
-	// b.boxContainer[iIndexBox][jIndexBox].
 }
 
 // updateHistory adds a new entry to the history if debug flag is enabled
@@ -85,6 +100,8 @@ func (b *Board) add(i, j int, value string) {
 	(*b.data)[i][j] = byte(value[0])
 }
 
+// simpleAdd adds a value to all the containers and updates the data
+// accordingly, but doesn't update  the restricted values
 func (b *Board) simpleAdd(i, j int, value string) {
 	b.boxContainer[i/3][j/3].simpleAdd(i, j, value)
 	b.columnContainer[j].simpleAdd(i, j, value)
@@ -95,6 +112,8 @@ func (b *Board) simpleAdd(i, j int, value string) {
 	b.updateHistory()
 }
 
+// simpleRm removes a value from all containers and updates the board data
+// accordingly, but doesn't update restricted values
 func (b *Board) simpleRm(i, j int, value string) {
 	b.boxContainer[i/3][j/3].simpleRm(i, j, value)
 	b.columnContainer[j].simpleRm(i, j, value)
@@ -160,25 +179,6 @@ func (b *Board) isValid() bool {
 	return true
 }
 
-// func (b *Board) updatePossibleValues() {
-// 	for i := 0; i < 9; i++ {
-// 		for j := 0; j < 9; j++ {
-// 			if string(b.data[i][j]) != "." {
-// 				continue
-// 			}
-
-// 			iIndexBox := i / 3
-// 			jIndexBox := j / 3
-
-// 			boxPossibleValues := b.boxContainer[iIndexBox][jIndexBox].getPossibleValues()
-// 			columnPossibleValues := b.columnContainer[j].getPossibleValues()
-// 			rowPossibleValues := b.rowContainer[i].getPossibleValues()
-
-// 			result := []string{}
-// 		}
-// 	}
-// }
-
 func (b *Board) addRestrictedToContainer(i, j int, value string) {
 	iIndexBox := i / 3
 	jIndexBox := j / 3
@@ -206,8 +206,6 @@ func (b *Board) getUniqueRestrictedFromBox(i, j int) map[string]Point {
 	iIndexBox := i / 3
 	jIndexBox := j / 3
 
-	// s.restrictedValues = map[string]map[Point]bool{}
-	//map[string]Point
 	return b.boxContainer[iIndexBox][jIndexBox].getUniqueRestricted()
 
 }
@@ -222,7 +220,6 @@ func (b *Board) getUniqueRestrictedFromCol(j int) map[string]Point {
 
 func (b *Board) calculatePossibleValuesInCoordinate(i, j int) *[]string {
 	if string((*b.data)[i][j]) != "." {
-		// fmt.Printf("This place is filled with: %s\n", string(b.data[i][j]))
 		return &[]string{}
 	}
 
@@ -251,7 +248,6 @@ func (b *Board) spacesLeft() int {
 	var spacesLeft int
 	for i := 0; i < 9; i++ {
 		for j := 0; j < 9; j++ {
-			// fmt.Printf("Place %d, %d, value %s\n", i, j, string(b.data[i][j]))
 			if string((*b.data)[i][j]) == "." {
 				spacesLeft++
 			}
@@ -272,26 +268,15 @@ func (b *Board) GetFirstEmptyPlace() Point {
 	return Point{-1, -1}
 }
 
-// func (b *Board) ApplyTranslations(translations []Fill) {
-//     for _, fill := range traslations {
-//         (*b.data)[fill.point.X][fill.point.Y] = byte(string(fill.value)[0])
-//     }
-// }
-
-// func (b *Board) ReverseTranslations(translations []Fill) {
-//     for _, fill := range traslations {
-//         (*b.data)[fill.point.X][fill.point.Y] = byte(".")
-//     }
-// }
-
+// ApplyTranslation takes a translation and applies it to all containers
+// and to the board
 func (b *Board) ApplyTranslation(translation Fill) {
-	//fmt.Printf("value to be saved %s\n", strconv.Itoa(translation.value))
-	//(*b.data)[translation.point.X][translation.point.Y] = byte(strconv.Itoa(translation.value)[0])
 	b.simpleAdd(translation.point.X, translation.point.Y, strconv.Itoa(translation.value))
 }
 
+// ReverseTranslation takes a translation and reverts it from all containers
+// and the board
 func (b *Board) ReverseTranslation(translation Fill) {
-	//(*b.data)[translation.point.X][translation.point.Y] = byte("."[0])
 	b.simpleRm(translation.point.X, translation.point.Y, strconv.Itoa(translation.value))
 }
 

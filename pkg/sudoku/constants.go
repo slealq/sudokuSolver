@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
-var (
+const (
 	SMALL_SQUARE_SIZE = 3
 	ROW_LENGTH        = 9
 	COLUMN_LENGTH     = 9

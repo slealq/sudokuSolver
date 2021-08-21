@@ -24,7 +24,8 @@ package sudoku
 // container is responsible of storing the values stored inside the container,
 // as well as updating the possibleValues and the restrictedValues as well
 type container struct {
-	numberSet      map[string]int
+	numberSet map[string]int
+	// possibleValues
 	possibleValues map[string]bool
 	// Restricted values are the ones that
 	// are posible and concruent with the posibilities
@@ -42,6 +43,18 @@ func (s *container) create() {
 	s.numberSet = map[string]int{}
 	s.createPossibleValues()
 	s.restrictedValues = map[string]map[Point]bool{}
+}
+
+// createPossibleValues stores
+func (s *container) createPossibleValues() {
+	result := map[string]bool{}
+
+	for value := range allValues {
+		if s.numberSet[value] == 0 {
+			result[value] = true
+		}
+	}
+	s.possibleValues = result
 }
 
 func (s *container) add(i, j int, value string) {
@@ -62,7 +75,8 @@ func (s *container) add(i, j int, value string) {
 	}
 }
 
-// should only be used for backtracking
+// simpleAdd adds a value to the numberSet of the container. Should only be
+// used for backtracking
 func (s *container) simpleAdd(i, j int, value string) {
 	if s.numberSet == nil {
 		s.create()
@@ -76,6 +90,7 @@ func (s *container) simpleAdd(i, j int, value string) {
 	s.numberSet[value]++
 }
 
+// simpleRm removes a value from the numberSet of this container.
 // remove should only be used for backtracking, since it
 // will irreversible damage restrictedValues
 func (s *container) simpleRm(i, j int, value string) {
@@ -84,18 +99,6 @@ func (s *container) simpleRm(i, j int, value string) {
 	}
 
 	s.numberSet[value]--
-
-}
-
-// isValid says if the values stored in this container
-// are all different
-func (s *container) isValid() bool {
-	for _, count := range s.numberSet {
-		if count > 1 {
-			return false
-		}
-	}
-	return true
 }
 
 func (s *container) updatePossibleValues(value *string) {
@@ -103,88 +106,31 @@ func (s *container) updatePossibleValues(value *string) {
 	s.possibleValues[*value] = false
 }
 
-func (s *container) createPossibleValues() {
-	result := map[string]bool{}
-
-	for value := range allValues {
-		if s.numberSet[value] == 0 {
-			result[value] = true
-		}
-	}
-	s.possibleValues = result
-}
-
-// possibleValues returns the posible values for this
-// sudoku container
-func (s *container) getPossibleValues() *map[string]bool {
-	return &s.possibleValues
-	//     result := map[string]bool{}
-
-	//     for value, _ := range allValues {
-	//         if s.numberSet[value] == 0 {
-	//             result[value] = true
-	//         }
-	//     }
-	//     return result
-}
-
 func (s *container) addRestricted(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
-		//fmt.Printf("->addRestricted failed | id=\"%10s\", i=%d, j=%d, val=%s |\n", s.id, i, j, value)
 		s.restrictedValues[value] = map[Point]bool{}
 	}
-	//fmt.Printf("add restricted value %d,%d val %s\n", i, j, value)
 
 	s.restrictedValues[value][Point{i, j}] = true
-
-	// if s.id == "box: 2,0" {
-	//     fmt.Printf("->adding value to box | id=\"%10s\", i=%d, j=%d, val=%s |\n", s.id, i, j, value)
-	//     fmt.Printf("restrictedValues : %v\n", s.restrictedValues)
-	// }
 }
 
 func (s *container) rmRestrictedValue(value string) {
 	if s.restrictedValues[value] == nil {
-		// fmt.Printf("rmRestricted failed %d, %d, %s\n", i, j, value)
 		return
 	}
-	//s.restrictedValues = nil
-	// if _, ok := s.restrictedValues[value][Point{i,j}]; !ok {
-	//     fmt.Printf("rmRestricted value %d,%d not found\n", i, j)
-	//     return
-	// }
 
 	delete(s.restrictedValues, value)
-	// delete(s.restrictedValues[value], Point{i,j})
-
-	// Restricted values should be deleted from the map entirely
-	// if the the value is already set
-	// for key, _ := range(s.restrictedValues) {
-	//     delete(s.restrictedValues, key)
-	// }
-	// sc.restrictedValues[value][Point{i,j}] = false
 }
 
 func (s *container) rmRestrictedPoint(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
-		// fmt.Printf("rmRestricted failed %d, %d, %s\n", i, j, value)
 		return
 	}
-	//s.restrictedValues = nil
 	if _, ok := s.restrictedValues[value][Point{i, j}]; !ok {
-		// fmt.Printf("rmRestricted value %d,%d not found\n", i, j)
 		return
 	}
 
-	//delete(s.restrictedValues, value)
 	delete(s.restrictedValues[value], Point{i, j})
-
-	// Restricted values should be deleted from the map entirely
-	// if the the value is already set
-	// for key, _ := range(s.restrictedValues) {
-	//     delete(s.restrictedValues, key)
-	// }
-	// sc.restrictedValues[value][Point{i,j}] = false
 }
 
 func (s *container) getUniqueRestricted() map[string]Point {
@@ -192,8 +138,6 @@ func (s *container) getUniqueRestricted() map[string]Point {
 	// container (That point can ONLY allow that value)
 
 	result := map[string]Point{}
-
-	// restrictedValues map[string]map[Point]bool
 
 	for value, pointSet := range s.restrictedValues {
 		if pointSet == nil {
@@ -210,4 +154,21 @@ func (s *container) getUniqueRestricted() map[string]Point {
 		}
 	}
 	return result
+}
+
+// possibleValues returns the posible values for this
+// sudoku container
+func (s *container) getPossibleValues() *map[string]bool {
+	return &s.possibleValues
+}
+
+// isValid says if the values stored in this container
+// are all different
+func (s *container) isValid() bool {
+	for _, count := range s.numberSet {
+		if count > 1 {
+			return false
+		}
+	}
+	return true
 }
