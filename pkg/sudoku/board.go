@@ -25,14 +25,15 @@ import (
 
 // Complete sudoku Board
 type Board struct {
-	boxContainer    [3][3]container
-	columnContainer [9]container
-	rowContainer    [9]container
+	boxContainer    [3][3]*container
+	columnContainer [9]*container
+	rowContainer    [9]*container
 	data            *[][]byte
 	possibleValues  [9][9][]string
-	cells           [9][9]cell
-	history         history
-	debug           bool
+
+	cells   [9][9]*cell
+	history history
+	debug   bool
 }
 
 // newBoard creates a new board, instanciates containers, adds ids to them
@@ -43,15 +44,10 @@ func newBoard(data *[][]byte) *Board {
 
 	// TODO: Maybe just enable with debug info
 	b.history = history{Capacity: 20}
-
-	b.boxContainer = [3][3]container{}
-	b.columnContainer = [9]container{}
-	b.rowContainer = [9]container{}
 	b.data = data
 
+	b.newContainers()
 	b.initCells()
-
-	b.addIdToContainers()
 
 	for i, row := range *data {
 		for j, ijthValue := range row {
@@ -71,17 +67,13 @@ func (b *Board) initCells() {
 		panic(aLog.logMsg)
 	}
 
-	b.cells = [ROW_LENGTH][COLUMN_LENGTH]cell{}
-
 	for i, row := range *b.data {
 		for j, value := range row {
 			aCell := newCell(i, j)
-			b.addCellObservers(&aCell)
+			b.addCellObservers(aCell)
 
 			aCell.update(value)
 			b.cells[i][j] = aCell
-
-			// TODO register observers
 		}
 	}
 }
@@ -94,17 +86,17 @@ func (b *Board) addCellObservers(aCell *cell) {
 	jBoxIndex := aCell.j / 3
 	aCell.addObserver(
 		fmt.Sprintf("box_%di_%dj", aCell.i, aCell.j),
-		&b.boxContainer[iBoxIndex][jBoxIndex],
+		b.boxContainer[iBoxIndex][jBoxIndex],
 	)
 
 	aCell.addObserver(
 		fmt.Sprintf("row_%di", aCell.i),
-		&b.rowContainer[aCell.i],
+		b.rowContainer[aCell.i],
 	)
 
 	aCell.addObserver(
 		fmt.Sprintf("col_%dj", aCell.j),
-		&b.rowContainer[aCell.j],
+		b.columnContainer[aCell.j],
 	)
 
 }
@@ -172,21 +164,19 @@ func (b *Board) rmRestrictedFromContainers(i, j int, value string) {
 	}
 }
 
-func (b *Board) addIdToContainers() {
+// newContainers creates all the containers and initializes them with the
+// corresponding ids
+func (b *Board) newContainers() {
 	for i := 0; i < 9; i++ {
-		b.rowContainer[i].addID(fmt.Sprintf("row: %d", i))
+		b.rowContainer[i] = newContainer(fmt.Sprintf("row_%d", i))
 		for j := 0; j < 9; j++ {
-			b.boxContainer[i/3][j/3].addID(fmt.Sprintf("box: %d,%d", i/3, j/3))
+			b.boxContainer[i/3][j/3] = newContainer(fmt.Sprintf("box_%di_%dj", i/3, j/3))
 		}
 	}
 	for j := 0; j < 9; j++ {
-		b.columnContainer[j].addID(fmt.Sprintf("col: %d", j))
+		b.columnContainer[j] = newContainer(fmt.Sprintf("col_%d", j))
 	}
 }
-
-// func (b *Board) getBoard() *[][]byte {
-//     return &b.data
-// }
 
 func (b *Board) isValid() bool {
 	for _, boxRow := range b.boxContainer {

@@ -23,10 +23,10 @@ import (
 
 // cell represents a single cell in the sudoku board
 type cell struct {
-	value     byte
-	observers map[string]cellObserver
-	id        string
-	i, j      int
+	preValue, value byte
+	observers       map[string]cellObserver
+	id              string
+	i, j            int
 }
 
 // getCellId returns an ID from coordinates given
@@ -35,12 +35,14 @@ func getCellId(i, j int) string {
 }
 
 // newCell returns a new cell, with the observers map initialized
-func newCell(i, j int) cell {
+func newCell(i, j int) *cell {
 
-	aCell := cell{
-		id: getCellId(i, j),
-		i:  i,
-		j:  j,
+	aCell := &cell{
+		id:       getCellId(i, j),
+		i:        i,
+		j:        j,
+		value:    byte('.'),
+		preValue: byte('.'),
 	}
 
 	aCell.observers = make(map[string]cellObserver)
@@ -78,7 +80,7 @@ func (c *cell) rmObserver(id string) error {
 func (c *cell) notifyAll() {
 
 	for _, obs := range c.observers {
-		obs.notify(c.id)
+		obs.notify(c)
 	}
 }
 
@@ -105,6 +107,8 @@ func (c *cell) update(newValue byte) {
 		panic(aLog.logMsg)
 	}
 
+	// store value history
+	c.preValue = c.value
 	c.value = newValue
 
 	c.notifyAll()
@@ -113,4 +117,9 @@ func (c *cell) update(newValue byte) {
 // get returns the current value of the cell
 func (c *cell) get() byte {
 	return c.value
+}
+
+// String satifies the stringer interface
+func (c *cell) String() string {
+	return string(c.value)
 }

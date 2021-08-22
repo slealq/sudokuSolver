@@ -21,13 +21,12 @@ import "testing"
 
 type ObserverMock struct {
 	Notification bool
-	cellRef      *cell
 	cellValue    byte
 }
 
-func (o *ObserverMock) notify(cellId string) {
+func (o *ObserverMock) notify(aCell *cell) {
 	o.Notification = true
-	o.cellValue = o.cellRef.get()
+	o.cellValue = aCell.get()
 }
 
 var observer ObserverMock
@@ -41,7 +40,7 @@ func TestObserverUpdate(t *testing.T) {
 
 	// Create new observer, with notification off. Observer has reference
 	// to the cell
-	observer = ObserverMock{Notification: false, cellRef: &aCell}
+	observer = ObserverMock{Notification: false}
 
 	if observer.Notification == true {
 		t.Errorf("Observer notification set: %v", observer.Notification)

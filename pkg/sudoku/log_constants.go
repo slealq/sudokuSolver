@@ -31,11 +31,18 @@ var (
 
 	// sudoku.go
 	callingBacktracking = "Calling bactracking, isValid: %v, board:\n%s"
+
+	// container.go
+	cellNotificationArrived    = "Container '%-9s' received notification from cell: '%s', value: '%s'"
+	cellUpdateInvalidValue     = "Container '%-9s' received notification with an invalid cell value: '%s'"
+	containerValueNotAvailable = "Value '%s' not available in container '%-9s'"
+	cellPrevValueInvalid       = "Cell '%s' previous value: '%s' is invalid"
+	containerAvailableValues   = "Container '%-9s' availabe values updated:\n %v"
 )
 
 var (
 	LOG_FILENAME   = "logs.txt"
 	INFO_HEADER    = "INFO: "
-	WARNING_HEADER = "HEADER: "
+	WARNING_HEADER = "WARNING: "
 	ERROR_HEADER   = "ERROR: "
 )

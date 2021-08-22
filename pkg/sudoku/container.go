@@ -17,6 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
+import (
+	"fmt"
+	"strings"
+)
+
 // container is a single sudoku container from a sudoku board.
 // Nine cell values are stored in a single container. One single cell
 // can be shared across several values.
@@ -33,16 +38,86 @@ type container struct {
 	// the coordinate where it's posible
 	restrictedValues map[string]map[Point]bool
 	id               string
+	availableValues  map[byte]bool
 }
 
-func (s *container) notify(cellId string) {
-	// TODO Handle the notifications from cell updates
-	aLog := newLog("test notification arrived")
-	aLog.Error()
+// newContainer returns a pointer to a new container initialized
+func newContainer(id string) *container {
+	aContainer := &container{id: id}
+
+	// start with all available values set to true
+	aContainer.availableValues = map[byte]bool{
+		'1': true,
+		'2': true,
+		'3': true,
+		'4': true,
+		'5': true,
+		'6': true,
+		'7': true,
+		'8': true,
+		'9': true,
+	}
+
+	return aContainer
 }
 
-func (s *container) addID(value string) {
-	s.id = value
+// notify satifies the cellObserver interface, and is used to receive
+// notifications from the cells when the value changes
+func (s *container) notify(aCell *cell) {
+	aLog := newLog(cellNotificationArrived, s.id, aCell.id, aCell.String())
+	aLog.Info()
+
+	// log the result at the end
+	defer func() {
+		aLog = newLog(containerAvailableValues, s.id, s.availValStr())
+		aLog.Info()
+	}()
+
+	// case where the update removes a value from the board, in which case
+	// enable again the previous value as available
+	if aCell.value == byte('.') {
+		if _, ok := s.availableValues[aCell.preValue]; !ok {
+			aLog := newLog(cellPrevValueInvalid, aCell.id, string(aCell.preValue))
+			aLog.Warn()
+			return
+		}
+
+		// If previous value is not empty, restore it as available
+		s.availableValues[aCell.preValue] = true
+	} else
+	// value should be valid. Remove that value from available values
+	{
+		var available, ok bool
+		if available, ok = s.availableValues[aCell.value]; !ok {
+			aLog := newLog(cellUpdateInvalidValue, s.id, aCell.String())
+			aLog.Error()
+			panic(aLog.logMsg)
+		}
+
+		// double check that value is still available in the container
+		if !available {
+			aLog := newLog(containerValueNotAvailable, aCell.String(), s.id)
+			aLog.Error()
+			panic(aLog.logMsg)
+		}
+
+		s.availableValues[aCell.value] = false
+	}
+}
+
+// availValStr returns the string representation of the available values in
+// the container
+func (s *container) availValStr() string {
+
+	var sb strings.Builder
+
+	fmt.Fprint(&sb, "{")
+	for value, available := range s.availableValues {
+		fmt.Fprintf(&sb, "%s: %v, ", string(value), available)
+	}
+	fmt.Fprint(&sb, "}")
+
+	return sb.String()
 }
 
 func (s *container) create() {
