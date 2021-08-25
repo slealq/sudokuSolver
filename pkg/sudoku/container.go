@@ -38,32 +38,32 @@ type container struct {
 	// the coordinate where it's posible
 	restrictedValues map[string]map[Point]bool
 	id               string
-	availableValues  map[byte]bool
+	observers        map[string]containerObserver
+	availableValues  *availableValues
 }
 
 // newContainer returns a pointer to a new container initialized
 func newContainer(id string) *container {
 	aContainer := &container{id: id}
 
+	aContainer.observers = make(map[string]containerObserver)
+
 	// start with all available values set to true
-	aContainer.availableValues = map[byte]bool{
-		'1': true,
-		'2': true,
-		'3': true,
-		'4': true,
-		'5': true,
-		'6': true,
-		'7': true,
-		'8': true,
-		'9': true,
-	}
+	aContainer.availableValues = newAvailableValues()
 
 	return aContainer
 }
 
-// notify satifies the cellObserver interface, and is used to receive
-// notifications from the cells when the value changes
-func (s *container) notify(aCell *cell) {
+// Id returns the ID of this container
+func (s *container) Id() string {
+	return s.id
+}
+
+// update satifies the cellObserver interface, and is used to receive
+// notifications from the cells when the value changes.
+func (s *container) update(aCell *cell) {
+
+	// cell notification arrived
 	aLog := newLog(cellNotificationArrived, s.id, aCell.id, aCell.String())
 	aLog.Info()
 
@@ -76,19 +76,20 @@ func (s *container) notify(aCell *cell) {
 	// case where the update removes a value from the board, in which case
 	// enable again the previous value as available
 	if aCell.value == byte('.') {
-		if _, ok := s.availableValues[aCell.preValue]; !ok {
+		if _, ok := (*s.availableValues)[aCell.preValue]; !ok {
 			aLog := newLog(cellPrevValueInvalid, aCell.id, string(aCell.preValue))
 			aLog.Warn()
 			return
 		}
 
 		// If previous value is not empty, restore it as available
-		s.availableValues[aCell.preValue] = true
+		(*s.availableValues)[aCell.preValue] = true
+		s.notifyObservers()
 	} else
 	// value should be valid. Remove that value from available values
 	{
 		var available, ok bool
-		if available, ok = s.availableValues[aCell.value]; !ok {
+		if available, ok = (*s.availableValues)[aCell.value]; !ok {
 			aLog := newLog(cellUpdateInvalidValue, s.id, aCell.String())
 			aLog.Error()
 			panic(aLog.logMsg)
@@ -101,7 +102,8 @@ func (s *container) notify(aCell *cell) {
 			panic(aLog.logMsg)
 		}
 
-		s.availableValues[aCell.value] = false
+		(*s.availableValues)[aCell.value] = false
+		s.notifyObservers()
 	}
 }
 
@@ -112,12 +114,46 @@ func (s *container) availValStr() string {
 	var sb strings.Builder
 
 	fmt.Fprint(&sb, "{")
-	for value, available := range s.availableValues {
+	for value, available := range *s.availableValues {
 		fmt.Fprintf(&sb, "%s: %v, ", string(value), available)
 	}
 	fmt.Fprint(&sb, "}")
 
 	return sb.String()
+}
+
+// addObserver adds am observer to the observers map. The observers all get
+// a notification when the availableValues of this container change
+func (s *container) addObserver(newObserver containerObserver) error {
+
+	if _, ok := s.observers[newObserver.Id()]; ok {
+		return fmt.Errorf(containerObserverAlreadyRegistered, newObserver.Id())
+	}
+
+	s.observers[newObserver.Id()] = newObserver
+
+	return nil
+}
+
+// rmObserver removes an observer from the observers map. The id is used
+// to identify the target observer
+func (s *container) rmObserver(obs containerObserver) error {
+
+	if _, ok := s.observers[obs.Id()]; !ok {
+		return fmt.Errorf(containerObserverNotFound, obs.Id())
+	}
+
+	delete(s.observers, obs.Id())
+
+	return nil
+}
+
+// notifyObservers sends a notification of update to all observers.
+func (s *container) notifyObservers() {
+
+	for _, obs := range s.observers {
+		obs.update(s)
+	}
 }
 
 func (s *container) create() {

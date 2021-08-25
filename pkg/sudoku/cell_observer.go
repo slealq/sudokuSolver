@@ -18,5 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package sudoku
 
 type cellObserver interface {
-	notify(aCell *cell)
+	update(aCell *cell)
+	Id() string
 }

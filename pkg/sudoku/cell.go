@@ -27,6 +27,7 @@ type cell struct {
 	observers       map[string]cellObserver
 	id              string
 	i, j            int
+	availableValues *availableValues
 }
 
 // getCellId returns an ID from coordinates given
@@ -47,18 +48,26 @@ func newCell(i, j int) *cell {
 
 	aCell.observers = make(map[string]cellObserver)
 
+	// start with all available values set to true
+	aCell.availableValues = newAvailableValues()
+
 	return aCell
+}
+
+// Id returns the ID of this cell
+func (c *cell) Id() string {
+	return c.id
 }
 
 // addObserver adds am observer to the observers map. ID is a string that
 // should uniquely identify the `newObserver`
-func (c *cell) addObserver(id string, newObserver cellObserver) error {
+func (c *cell) addObserver(newObserver cellObserver) error {
 
-	if _, ok := c.observers[id]; ok {
-		return fmt.Errorf(cellObserverAlreadyRegistered, id)
+	if _, ok := c.observers[newObserver.Id()]; ok {
+		return fmt.Errorf(cellObserverAlreadyRegistered, newObserver.Id())
 	}
 
-	c.observers[id] = newObserver
+	c.observers[newObserver.Id()] = newObserver
 
 	return nil
 }
@@ -76,16 +85,81 @@ func (c *cell) rmObserver(id string) error {
 	return nil
 }
 
-// notifyAll sends a notification of update to all observers.
-func (c *cell) notifyAll() {
+// update receives a notification from the observed containers. Satifies the
+// containerObserver interface.
+func (c *cell) update(aContainer *container) {
+
+	// ignore notifications if
+	aLog := newLog(containerNotificationArrived, c.id, string(c.value), aContainer.id)
+	aLog.Info()
+
+	// log the result at the end
+	defer func() {
+		var availValStr string
+		if c.availableValues != nil {
+			availValStr = c.availableValues.String()
+		} else {
+			availValStr = "nil"
+		}
+
+		aLog = newLog(cellAvailableValues, c.id, availValStr)
+		aLog.Info()
+	}()
+
+	// safely ignore update if current cell has a value
+	if c.value != byte('.') {
+		c.availableValues = nil
+		return
+	}
+
+	if c.availableValues == nil {
+		c.availableValues = newAvailableValues()
+	}
+
+	// cell should have reference to three observers (containers), in order
+	// to update self available values
+	if len(c.observers) != CONTAINERS_PER_CELL {
+		aLog := newLog(notAllContainersAvailable, c.id)
+		aLog.Error()
+		panic(aLog.logMsg)
+	}
+
+	// go through all values, verify if they are available or not by polling
+	// all containers. Containers can be accessed through observers
+	for value := range *c.availableValues {
+		availableInContainers := true
+
+		// if any container has this value unavailable, set it as that for
+		// this cell. Iterate through all containers to find any with the
+		// value unavailable
+		for _, obs := range c.observers {
+
+			container := obs.(*container)
+			if (*container.availableValues)[value] == false {
+				(*c.availableValues)[value] = false
+				availableInContainers = false
+			}
+		}
+
+		// if all containers have it available, set this cell to true for
+		// that value
+		if availableInContainers {
+			(*c.availableValues)[value] = true
+		}
+	}
+
+}
+
+// notifyObservers sends a notification of update to all observers.
+func (c *cell) notifyObservers() {
 
 	for _, obs := range c.observers {
-		obs.notify(c)
+		obs.update(c)
 	}
 }
 
-// update the value of the cell, and notify all observers about the change
-func (c *cell) update(newValue byte) {
+// set the value of the cell, and notify all observers about the change
+func (c *cell) set(newValue byte) {
 
 	allowedValues := map[byte]bool{
 		'.': true,
@@ -111,7 +185,7 @@ func (c *cell) update(newValue byte) {
 	c.preValue = c.value
 	c.value = newValue
 
-	c.notifyAll()
+	c.notifyObservers()
 }
 
 // get returns the current value of the cell

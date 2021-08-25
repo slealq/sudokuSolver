@@ -17,30 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package sudoku
 
-const (
-	SMALL_SQUARE_SIZE   = 3
-	ROW_LENGTH          = 9
-	COLUMN_LENGTH       = 9
-	CONTAINERS_PER_CELL = 3
-)
-
-var allValues = map[string]bool{"1": true,
-	"2": true,
-	"3": true,
-	"4": true,
-	"5": true,
-	"6": true,
-	"7": true,
-	"8": true,
-	"9": true,
-}
-
-type Point struct {
-	X int
-	Y int
-}
-
-type Fill struct {
-	value int
-	point Point
+type containerObserver interface {
+	update(aContainer *container)
+	Id() string
 }

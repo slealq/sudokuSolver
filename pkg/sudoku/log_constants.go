@@ -19,9 +19,12 @@ package sudoku
 
 var (
 	// cell.go
-	cellObserverAlreadyRegistered = "The observer id %s has already been registered"
-	cellObserverNotFound          = "The observer id %s was not found"
+	cellObserverAlreadyRegistered = "Cell observer id '%s' has already been registered"
+	cellObserverNotFound          = "Cell observer id '%s' was not found"
 	invalidUpdateValue            = "Invalid value for cell: %s"
+	containerNotificationArrived  = "Cell '%-5s' with value '%s' received notification from container: '%s'"
+	cellAvailableValues           = "Cell '%-5s' available values updated: %v"
+	notAllContainersAvailable     = "Cell '%-5s received an update, but doesn't have complete references to containers"
 
 	// board.go
 	backTrackWentWrong = "Backtracking went wrong; debug=%v; history=\n%s"
@@ -33,11 +36,13 @@ var (
 	callingBacktracking = "Calling bactracking, isValid: %v, board:\n%s"
 
 	// container.go
-	cellNotificationArrived    = "Container '%-9s' received notification from cell: '%s', value: '%s'"
-	cellUpdateInvalidValue     = "Container '%-9s' received notification with an invalid cell value: '%s'"
-	containerValueNotAvailable = "Value '%s' not available in container '%-9s'"
-	cellPrevValueInvalid       = "Cell '%s' previous value: '%s' is invalid"
-	containerAvailableValues   = "Container '%-9s' availabe values updated:\n %v"
+	cellNotificationArrived            = "Container '%-9s' received notification from cell: '%s', value: '%s'"
+	cellUpdateInvalidValue             = "Container '%-9s' received notification with an invalid cell value: '%s'"
+	containerValueNotAvailable         = "Value '%s' not available in container '%-9s'"
+	cellPrevValueInvalid               = "Cell '%s' previous value: '%s' is invalid"
+	containerAvailableValues           = "Container '%-9s' available values updated: %v"
+	containerObserverAlreadyRegistered = "Container observer '%s' has already been registered"
+	containerObserverNotFound          = "The container observer id '%s' was not found"
 )
 
 var (

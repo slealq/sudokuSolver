@@ -24,7 +24,11 @@ type ObserverMock struct {
 	cellValue    byte
 }
 
-func (o *ObserverMock) notify(aCell *cell) {
+func (o *ObserverMock) Id() string {
+	return "observerMock"
+}
+
+func (o *ObserverMock) update(aCell *cell) {
 	o.Notification = true
 	o.cellValue = aCell.get()
 }
@@ -46,8 +50,8 @@ func TestObserverUpdate(t *testing.T) {
 		t.Errorf("Observer notification set: %v", observer.Notification)
 	}
 
-	aCell.addObserver("a", &observer)
-	aCell.update(byte('1'))
+	aCell.addObserver(&observer)
+	aCell.set(byte('1'))
 
 	if observer.Notification != true {
 		t.Errorf("Notification should have arrived to observer: %v",
@@ -74,5 +78,5 @@ func TestInvalidUpdate(t *testing.T) {
 	}()
 
 	// The following update should panic
-	aCell.update(byte('a'))
+	aCell.set(byte('a'))
 }

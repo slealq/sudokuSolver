@@ -67,38 +67,37 @@ func (b *Board) initCells() {
 		panic(aLog.logMsg)
 	}
 
+	// register observers to all cells,
+	for i, row := range *b.data {
+		for j := range row {
+			aCell := newCell(i, j)
+			b.registerObservers(aCell)
+			b.cells[i][j] = aCell
+		}
+	}
+
+	// set the initial layout to all cells
 	for i, row := range *b.data {
 		for j, value := range row {
-			aCell := newCell(i, j)
-			b.addCellObservers(aCell)
-
-			aCell.update(value)
-			b.cells[i][j] = aCell
+			b.cells[i][j].set(value)
 		}
 	}
 }
 
-// addCellObservers Add the three corresponding observer for each a given
-// cell
-func (b *Board) addCellObservers(aCell *cell) {
+// registerObservers Add the three corresponding observer for each a given
+// cell, and container
+func (b *Board) registerObservers(aCell *cell) {
 
 	iBoxIndex := aCell.i / 3
 	jBoxIndex := aCell.j / 3
-	aCell.addObserver(
-		fmt.Sprintf("box_%di_%dj", aCell.i, aCell.j),
-		b.boxContainer[iBoxIndex][jBoxIndex],
-	)
 
-	aCell.addObserver(
-		fmt.Sprintf("row_%di", aCell.i),
-		b.rowContainer[aCell.i],
-	)
+	aCell.addObserver(b.boxContainer[iBoxIndex][jBoxIndex])
+	aCell.addObserver(b.rowContainer[aCell.i])
+	aCell.addObserver(b.columnContainer[aCell.j])
 
-	aCell.addObserver(
-		fmt.Sprintf("col_%dj", aCell.j),
-		b.columnContainer[aCell.j],
-	)
-
+	b.boxContainer[iBoxIndex][jBoxIndex].addObserver(aCell)
+	b.rowContainer[aCell.i].addObserver(aCell)
+	b.columnContainer[aCell.j].addObserver(aCell)
 }
 
 // addToContainers add each specific cell to all the containers that should
