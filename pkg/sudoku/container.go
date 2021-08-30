@@ -231,7 +231,7 @@ func (s *container) addRestricted(i, j int, value string) {
 		s.restrictedValues[value] = map[common.Point]bool{}
 	}
 
-	s.restrictedValues[value][common.Point{i, j}] = true
+	s.restrictedValues[value][common.Point{X: i, Y: j}] = true
 }
 
 func (s *container) rmRestrictedValue(value string) {
@@ -246,11 +246,11 @@ func (s *container) rmRestrictedPoint(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
 		return
 	}
-	if _, ok := s.restrictedValues[value][common.Point{i, j}]; !ok {
+	if _, ok := s.restrictedValues[value][common.Point{X: i, Y: j}]; !ok {
 		return
 	}
 
-	delete(s.restrictedValues[value], common.Point{i, j})
+	delete(s.restrictedValues[value], common.Point{X: i, Y: j})
 }
 
 func (s *container) getUniqueRestricted() map[string]common.Point {

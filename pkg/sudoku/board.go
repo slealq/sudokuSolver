@@ -285,12 +285,12 @@ func (b *Board) GetFirstEmptyPlace() common.Point {
 	for i := 0; i < 9; i++ {
 		for j := 0; j < 9; j++ {
 			if string((*b.data)[i][j]) == "." {
-				return common.Point{i, j}
+				return common.Point{X: i, Y: j}
 			}
 		}
 	}
 	// This should not happen
-	return common.Point{-1, -1}
+	return common.Point{X: -1, Y: -1}
 }
 
 // ApplyTranslation takes a translation and applies it to all containers
