@@ -42,7 +42,7 @@ type container struct {
 	restrictedValues map[string]map[common.Point]bool
 	id               string
 	observers        map[string]containerObserver
-	availableValues  *availableValues
+	availableValues  *AvailableValues
 }
 
 // newContainer returns a pointer to a new container initialized

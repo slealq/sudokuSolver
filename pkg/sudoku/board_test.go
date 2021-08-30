@@ -32,7 +32,7 @@ func TestSudokuStringer(t *testing.T) {
 		{'.', '.', '.', '.', '8', '.', '.', '7', '9'},
 	}
 
-	board := newBoard(&data)
+	board := NewBoard(&data)
 
 	expectedStr := `  | 0 1 2 3 4 5 6 7 8 
   | __________________

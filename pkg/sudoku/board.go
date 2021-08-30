@@ -39,9 +39,9 @@ type Board struct {
 	debug   bool
 }
 
-// newBoard creates a new board, instanciates containers, adds ids to them
+// NewBoard creates a new board, instanciates containers, adds ids to them
 // and finally add values to each container
-func newBoard(data *[][]byte) *Board {
+func NewBoard(data *[][]byte) *Board {
 
 	b := &Board{}
 
@@ -60,6 +60,85 @@ func newBoard(data *[][]byte) *Board {
 
 	return b
 }
+
+// String satifies the stringer interface
+func (b *Board) String() string {
+	var sb strings.Builder
+
+	firstRow := true
+
+	for i := 0; i < 9; i++ {
+		if firstRow {
+			fmt.Fprintf(&sb, "  | ")
+			for k := 0; k < 9; k++ {
+				fmt.Fprintf(&sb, "%d ", k)
+			}
+			fmt.Fprintf(&sb, "\n")
+			fmt.Fprintf(&sb, "  | ")
+			for k := 0; k < 9; k++ {
+				fmt.Fprintf(&sb, "__")
+			}
+			fmt.Fprintf(&sb, "\n")
+			firstRow = false
+		}
+
+		fmt.Fprintf(&sb, "%d | ", i)
+
+		for j := 0; j < 9; j++ {
+			fmt.Fprintf(&sb, "%s ", string((*b.data)[i][j]))
+		}
+		fmt.Fprintf(&sb, "\n")
+	}
+
+	return sb.String()
+}
+
+// GetAvailableValues returns the available values of a given cell position
+func (b *Board) GetAvailableValues(i, j int) *AvailableValues {
+	return b.cells[i][j].availableValues
+}
+
+// Set sets a value in the board, given the coordinate and the value
+func (b *Board) Set(i, j int, value byte) {
+
+	(*b.data)[i][j] = value
+	b.cells[i][j].set(value)
+
+	b.updateHistory()
+}
+
+// SpacesLeft returns the amount of positions left empty in the board
+func (b *Board) SpacesLeft() int {
+	var spacesLeft int
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			if string((*b.data)[i][j]) == "." {
+				spacesLeft++
+			}
+		}
+	}
+	return spacesLeft
+}
+
+// Data returns the data ptr from the board
+func (b *Board) Data() *[][]byte { return b.data }
+
+// newContainers creates all the containers and initializes them with the
+// corresponding ids
+func (b *Board) newContainers() {
+	for i := 0; i < 9; i++ {
+		b.rowContainer[i] = newContainer(fmt.Sprintf("row_%d", i))
+		for j := 0; j < 9; j++ {
+			b.boxContainer[i/3][j/3] = newContainer(fmt.Sprintf("box_%di_%dj", i/3, j/3))
+		}
+	}
+	for j := 0; j < 9; j++ {
+		b.columnContainer[j] = newContainer(fmt.Sprintf("col_%d", j))
+	}
+}
+
+// IsValid returns true if the board is valid, false otherwise
+func (b *Board) IsValid() bool { return b.isValid() }
 
 // initCells creates a cell value for each of the positions in data.
 func (b *Board) initCells() {
@@ -121,6 +200,112 @@ func (b *Board) updateHistory() {
 	}
 }
 
+// ========================= REFACTOR BELOW ===================================
+
+// ApplyTranslation takes a translation and applies it to all containers
+// and to the board
+func (b *Board) ApplyTranslation(translation common.Fill) {
+	b.simpleAdd(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
+}
+
+// ReverseTranslation takes a translation and reverts it from all containers
+// and the board
+func (b *Board) ReverseTranslation(translation common.Fill) {
+	b.simpleRm(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
+}
+
+// Backtrack performs a backtracking algorithm to the current board values,
+// in which it tests values and goes backwards if it reaches a point where the
+// values make the board invalid. Backtracking should end when all the cells
+// in the board are filled
+func (b *Board) Backtrack() {
+	// Check board is valid before calling backtracking, otherwise it will
+	// never be able to solve
+	if !b.isValid() {
+		aLog := logs.NewLog(logs.CannotBacktrack, b.String())
+		aLog.Error()
+		return
+	}
+
+	// Holds the translations made, so they can be reversed if required
+	translationInOrder := []common.Fill{}
+	currentTrans := 0
+
+	// newPos flag is turned on when the current position hasn't begun
+	// testing new numbers yet. Meaning we are arriving at this position for
+	// the first time.
+	newPos := false
+
+	for b.SpacesLeft() != 0 || b.isValid() == false {
+
+		aLog := logs.NewLog(logs.BackTrackingStats, len(translationInOrder), newPos)
+		aLog.Info()
+
+		if !newPos {
+			// since newPos flag is false, make a new Fill and add it
+			// to the translations
+			tempPoint := b.GetFirstEmptyPlace()
+			fill := common.Fill{Value: 1, Point: tempPoint}
+
+			translationInOrder = append(translationInOrder, fill)
+
+			b.ApplyTranslation(fill)
+		}
+
+		// When it's not the first backtracking, and the board is currently
+		// valid, advance to the next position
+		if b.isValid() && translationInOrder[currentTrans].Value < 9 {
+			// continue back tracking
+			currentTrans++
+			newPos = false
+
+		} else
+		// If board is not valid, then remove current translation and go
+		// backwards until a new valid position is reached
+		{
+			newPos = true
+
+			if translationInOrder[currentTrans].Value == 9 {
+				if len(translationInOrder) <= 1 {
+
+					aLog := logs.NewLog(logs.BackTrackWentWrong, b.debug,
+						b.history.String())
+					aLog.Error()
+					break
+				}
+				// remove this element
+				b.ReverseTranslation(translationInOrder[currentTrans])
+				translationInOrder = translationInOrder[:len(translationInOrder)-1]
+				currentTrans--
+
+				// increase the value of the previous
+			}
+
+			// At this point, currentTrans should have already been decremented
+			// so it's time to increase previous value IF that value is able
+			// to increase. If not, move backwards further
+
+			// We'll reverse the translation, increase the value, and apply it
+			// back again
+			b.ReverseTranslation(translationInOrder[currentTrans])
+			translationInOrder[currentTrans].Value++
+			b.ApplyTranslation(translationInOrder[currentTrans])
+		}
+	}
+}
+
+func (b *Board) GetFirstEmptyPlace() common.Point {
+	for i := 0; i < 9; i++ {
+		for j := 0; j < 9; j++ {
+			if string((*b.data)[i][j]) == "." {
+				return common.Point{X: i, Y: j}
+			}
+		}
+	}
+	// This should not happen
+	return common.Point{X: -1, Y: -1}
+}
+
 func (b *Board) add(i, j int, value string) {
 	b.addToContainers(i, j, value)
 	b.rmRestrictedFromContainers(i, j, value)
@@ -163,20 +348,6 @@ func (b *Board) rmRestrictedFromContainers(i, j int, value string) {
 	}
 	for jVar := 0; jVar < 3; jVar++ {
 		b.boxContainer[i/3][jVar].rmRestrictedPoint(i, jVar, value)
-	}
-}
-
-// newContainers creates all the containers and initializes them with the
-// corresponding ids
-func (b *Board) newContainers() {
-	for i := 0; i < 9; i++ {
-		b.rowContainer[i] = newContainer(fmt.Sprintf("row_%d", i))
-		for j := 0; j < 9; j++ {
-			b.boxContainer[i/3][j/3] = newContainer(fmt.Sprintf("box_%di_%dj", i/3, j/3))
-		}
-	}
-	for j := 0; j < 9; j++ {
-		b.columnContainer[j] = newContainer(fmt.Sprintf("col_%d", j))
 	}
 }
 
@@ -267,151 +438,4 @@ func (b *Board) calculatePossibleValuesInCoordinate(i, j int) *[]string {
 
 func (b *Board) getPossibleValues(i, j int) []string {
 	return b.possibleValues[i][j]
-}
-
-func (b *Board) spacesLeft() int {
-	var spacesLeft int
-	for i := 0; i < 9; i++ {
-		for j := 0; j < 9; j++ {
-			if string((*b.data)[i][j]) == "." {
-				spacesLeft++
-			}
-		}
-	}
-	return spacesLeft
-}
-
-func (b *Board) GetFirstEmptyPlace() common.Point {
-	for i := 0; i < 9; i++ {
-		for j := 0; j < 9; j++ {
-			if string((*b.data)[i][j]) == "." {
-				return common.Point{X: i, Y: j}
-			}
-		}
-	}
-	// This should not happen
-	return common.Point{X: -1, Y: -1}
-}
-
-// ApplyTranslation takes a translation and applies it to all containers
-// and to the board
-func (b *Board) ApplyTranslation(translation common.Fill) {
-	b.simpleAdd(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
-}
-
-// ReverseTranslation takes a translation and reverts it from all containers
-// and the board
-func (b *Board) ReverseTranslation(translation common.Fill) {
-	b.simpleRm(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
-}
-
-// Backtrack performs a backtracking algorithm to the current board values,
-// in which it tests values and goes backwards if it reaches a point where the
-// values make the board invalid. Backtracking should end when all the cells
-// in the board are filled
-func (b *Board) Backtrack() {
-	// Check board is valid before calling backtracking, otherwise it will
-	// never be able to solve
-	if !b.isValid() {
-		aLog := logs.NewLog(logs.CannotBacktrack, b.String())
-		aLog.Error()
-		return
-	}
-
-	// Holds the translations made, so they can be reversed if required
-	translationInOrder := []common.Fill{}
-	currentTrans := 0
-
-	// newPos flag is turned on when the current position hasn't begun
-	// testing new numbers yet. Meaning we are arriving at this position for
-	// the first time.
-	newPos := false
-
-	for b.spacesLeft() != 0 || b.isValid() == false {
-
-		aLog := logs.NewLog(logs.BackTrackingStats, len(translationInOrder), newPos)
-		aLog.Info()
-
-		if !newPos {
-			// since newPos flag is false, make a new Fill and add it
-			// to the translations
-			tempPoint := b.GetFirstEmptyPlace()
-			fill := common.Fill{Value: 1, Point: tempPoint}
-
-			translationInOrder = append(translationInOrder, fill)
-
-			b.ApplyTranslation(fill)
-		}
-
-		// When it's not the first backtracking, and the board is currently
-		// valid, advance to the next position
-		if b.isValid() && translationInOrder[currentTrans].Value < 9 {
-			// continue back tracking
-			currentTrans++
-			newPos = false
-
-		} else
-		// If board is not valid, then remove current translation and go
-		// backwards until a new valid position is reached
-		{
-			newPos = true
-
-			if translationInOrder[currentTrans].Value == 9 {
-				if len(translationInOrder) <= 1 {
-
-					aLog := logs.NewLog(logs.BackTrackWentWrong, b.debug,
-						b.history.String())
-					aLog.Error()
-					break
-				}
-				// remove this element
-				b.ReverseTranslation(translationInOrder[currentTrans])
-				translationInOrder = translationInOrder[:len(translationInOrder)-1]
-				currentTrans--
-
-				// increase the value of the previous
-			}
-
-			// At this point, currentTrans should have already been decremented
-			// so it's time to increase previous value IF that value is able
-			// to increase. If not, move backwards further
-
-			// We'll reverse the translation, increase the value, and apply it
-			// back again
-			b.ReverseTranslation(translationInOrder[currentTrans])
-			translationInOrder[currentTrans].Value++
-			b.ApplyTranslation(translationInOrder[currentTrans])
-		}
-	}
-}
-
-func (b *Board) String() string {
-	var sb strings.Builder
-
-	firstRow := true
-
-	for i := 0; i < 9; i++ {
-		if firstRow {
-			fmt.Fprintf(&sb, "  | ")
-			for k := 0; k < 9; k++ {
-				fmt.Fprintf(&sb, "%d ", k)
-			}
-			fmt.Fprintf(&sb, "\n")
-			fmt.Fprintf(&sb, "  | ")
-			for k := 0; k < 9; k++ {
-				fmt.Fprintf(&sb, "__")
-			}
-			fmt.Fprintf(&sb, "\n")
-			firstRow = false
-		}
-
-		fmt.Fprintf(&sb, "%d | ", i)
-
-		for j := 0; j < 9; j++ {
-			fmt.Fprintf(&sb, "%s ", string((*b.data)[i][j]))
-		}
-		fmt.Fprintf(&sb, "\n")
-	}
-
-	return sb.String()
 }

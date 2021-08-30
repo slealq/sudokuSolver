@@ -27,7 +27,7 @@ import (
 
 func isValidSudoku(data [][]byte) bool {
 
-	board := newBoard(&data)
+	board := NewBoard(&data)
 
 	return board.isValid()
 
@@ -120,12 +120,12 @@ func getKeysFromRestricted(restricted map[string]common.Point) []string {
 func solveSudoku(data [][]byte) {
 	start := time.Now()
 
-	board := newBoard(&data)
+	board := NewBoard(&data)
 	board.debug = true
 
 	// fmt.Printf("Spaces left: %d\n", board.spacesLeft())
 	filled := false
-	for board.spacesLeft() != 0 {
+	for board.SpacesLeft() != 0 {
 		board.calculatePossibleValues()
 		for i := 0; i < 9; i++ {
 			for j := 0; j < 9; j++ {

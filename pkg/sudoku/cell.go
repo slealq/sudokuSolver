@@ -30,7 +30,7 @@ type cell struct {
 	observers       map[string]cellObserver
 	id              string
 	i, j            int
-	availableValues *availableValues
+	availableValues *AvailableValues
 }
 
 // getCellId returns an ID from coordinates given

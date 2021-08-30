@@ -15,16 +15,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package sudoku
+package solver
 
 import (
 	"testing"
 
 	"github.com/slealq/sudokuSolver/pkg/common"
+	"github.com/slealq/sudokuSolver/pkg/sudoku"
 )
 
-func newData() *[][]byte {
-	return &[][]byte{
+const (
+	expectedStr = `5 3 4 6 7 8 9 1 2 
+6 7 2 1 9 5 3 4 8 
+1 9 8 3 4 2 5 6 7 
+8 5 9 7 6 1 4 2 3 
+4 2 6 8 5 3 7 9 1 
+7 1 3 9 2 4 8 5 6 
+9 6 1 5 3 7 2 8 4 
+2 8 7 4 1 9 6 3 5 
+3 4 5 2 8 6 1 7 9 
+`
+)
+
+func newBoard() *sudoku.Board {
+	data := [][]byte{
 		{'5', '3', '.', '.', '7', '.', '.', '.', '.'},
 		{'6', '.', '.', '1', '9', '5', '.', '.', '.'},
 		{'.', '9', '8', '.', '.', '.', '.', '6', '.'},
@@ -35,65 +49,39 @@ func newData() *[][]byte {
 		{'.', '.', '.', '4', '1', '9', '.', '.', '5'},
 		{'.', '.', '.', '.', '8', '.', '.', '7', '9'},
 	}
+
+	board := sudoku.NewBoard(&data)
+
+	return board
 }
 
-func TestSudokuValid(t *testing.T) {
-
-	board := [][]byte{
-		{'5', '4', '3', '1', '2', '7', '9', '6', '8'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
-	}
-
-	if isValidSudoku(board) == false {
-		t.Error("Board expected to be valid")
-	}
-
-}
-
-// BechmarkSolver performs a benchmark in the brute-force algorithm
+// BenchmarkDeterministic performs a benchmark on the deterministic algorithm
 // baseline:
-// BenchmarkSolver-8                 129	   9540439 ns/op	 1710449 B/op	   42574 allocs/op
-
-func BenchmarkSolver(b *testing.B) {
+// BenchmarkDeterministic-8   	      68	  17646803 ns/op	 3154438 B/op	   77219 allocs/op
+func BenchmarkDeterministic(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
-		data := newData()
-		solveSudoku(*data)
+		board := newBoard()
+		solver := NewSolver(board)
+		solver.Deterministic()
 	}
 
 }
 
-// TestSudokuSolver verifies that the brute-force sudoku solver works as
+// TestDeterministic verifies that the Deterministic algorithm works as
 // expected
-func TestSudokuSolver(t *testing.T) {
+func TestDeterministic(t *testing.T) {
 
-	data := newData()
+	board := newBoard()
 
-	solveSudoku(*data)
-
-	if isValidSudoku(*data) == false {
+	if board.IsValid() == false {
 		t.Errorf("Board expected to be valid")
 	}
 
-	expectedStr := `5 3 4 6 7 8 9 1 2 
-6 7 2 1 9 5 3 4 8 
-1 9 8 3 4 2 5 6 7 
-8 5 9 7 6 1 4 2 3 
-4 2 6 8 5 3 7 9 1 
-7 1 3 9 2 4 8 5 6 
-9 6 1 5 3 7 2 8 4 
-2 8 7 4 1 9 6 3 5 
-3 4 5 2 8 6 1 7 9 
-`
+	solver := NewSolver(board)
+	solver.Deterministic()
 
-	if boardStr := common.PrintSudoku(data); boardStr != expectedStr {
+	if boardStr := common.PrintSudoku(board.Data()); boardStr != expectedStr {
 		t.Errorf("board:\n%sis not the expected\n%s", boardStr, expectedStr)
 	}
 }

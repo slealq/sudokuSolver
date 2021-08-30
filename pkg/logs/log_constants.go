@@ -43,6 +43,9 @@ var (
 	ContainerAvailableValues           = "Container '%-9s' available values updated: %v"
 	ContainerObserverAlreadyRegistered = "Container observer '%s' has already been registered"
 	ContainerObserverNotFound          = "The container observer id '%s' was not found"
+
+	// solver.go
+	DeterministicApprNoMoreSteps = "Cannot fully solve sudoku with deterministic steps"
 )
 
 var (

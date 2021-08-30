@@ -22,13 +22,13 @@ import (
 	"strings"
 )
 
-type availableValues map[byte]bool
+type AvailableValues map[byte]bool
 
 // newAvailableValues create a new available values with all the values
 // available by default
-func newAvailableValues() *availableValues {
+func newAvailableValues() *AvailableValues {
 
-	return &availableValues{
+	return &AvailableValues{
 		'1': true,
 		'2': true,
 		'3': true,
@@ -41,9 +41,37 @@ func newAvailableValues() *availableValues {
 	}
 }
 
+// Unique returns a byte value if there's only one available value left
+// otherwise it returns an error
+func (a *AvailableValues) Unique() (byte, bool) {
+
+	// Verify the map is not nil, otherwise return false
+	if a == nil {
+		return byte('.'), false
+	}
+
+	// For performance, create a slice with the space required
+	availables := make([]byte, 0, 9)
+
+	// Add all available values to the slice
+	for value, isAvailable := range *a {
+		if isAvailable {
+			availables = append(availables, value)
+		}
+	}
+
+	// If only one available value, return it
+	if len(availables) == 1 {
+		return availables[0], true
+	}
+
+	return byte('.'), false
+
+}
+
 // String returns the string representation of the available values in the
 // container. Satisfies the Stringer interface
-func (a *availableValues) String() string {
+func (a *AvailableValues) String() string {
 
 	var sb strings.Builder
 

@@ -12,7 +12,10 @@
   - [Components](#components)
     - [Board representation](#board-representation)
   - [Responsabilities](#responsabilities)
-  - [Testing](#testing)
+  - [Sudoku](#sudoku)
+    - [Board](#board)
+    - [Containers](#containers)
+  - [Backtracking algorithm](#backtracking-algorithm)
 
 
 ## Design considerations
@@ -96,7 +99,6 @@ memory.
 ## Responsabilities
 
 The board is responsible of:
-
  - Managing containers. Every update of any cell is notified to the board,
 which in turn delegates the update to the proper cell.
  - Yielding possible values for each cell.
@@ -104,14 +106,46 @@ which in turn delegates the update to the proper cell.
 violation in place, although might not be complete).
 
 Containers are responsible of:
- - Managing possible values of each container. The recalculation of possible
-values should be triggered by an observer of each cell.
+ - For each position it keeps a slice of possible values.
+ - The recalculation of possible values should be triggered by an observer 
+of each cell.
 
 Cells are responsible of:
- - Storing the value of each cell. An observer observes this value, and notifies
-containers of possible changes in the values.
+ - Storing the value of each cell. An observer observes this value, and cell
+notifies containers of changes in the values.
+
+## Sudoku
+
+### Board
+As state in the responsibilities, the board will be in charge of two main
+things. All updates to values in the board will be done through the board
+itself. In turn, the board shall update the corresponding cell through the
+`update()` call.
+
+And board will create all required containers. On startup, when initially
+creating the board, each cell must be created, and assigned the corresponding
+id that indicates it's coordinates.
+
+Each container must be set to observe the required 9 cells correspondingly.
+This task will be delegated to the container itself, but is triggered by the
+board.
+
+Board can receive a `request` to yield all possible values of a spefic 
+coordinate, by which board will ask corresponding containers for their
+possible values, and yield the intersection of them.
+
+### Containers
 
 
-## Testing
+## Backtracking algorithm
 
-UTs 
+Backtracking is used to filled a particular sudoku when no `deterministic` 
+step can be made. This section will focus to explain in detail the logic
+that is behind the backtracking algorithm.
+
+Steps for backtracking: 
+
+  1. While there are spaces left, or if not, then the board might be full
+but the board might not be valid. In that case, if the board is invalid the
+backtracking should still probe new values.
+     - 
