@@ -19,6 +19,8 @@ package sudoku
 
 import (
 	"testing"
+
+	"github.com/slealq/sudokuSolver/pkg/common"
 )
 
 func TestSudokuValid(t *testing.T) {
@@ -72,7 +74,7 @@ func TestSudokuSolver(t *testing.T) {
 3 4 5 2 8 6 1 7 9 
 `
 
-	if boardStr := printSudoku(&board); boardStr != expectedStr {
+	if boardStr := common.PrintSudoku(&board); boardStr != expectedStr {
 		t.Errorf("board:\n%sis not the expected\n%s", boardStr, expectedStr)
 	}
 }

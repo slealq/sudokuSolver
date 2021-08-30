@@ -15,16 +15,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package sudoku
+package logs
 
 import (
 	"fmt"
 	"strings"
+
+	"github.com/slealq/sudokuSolver/pkg/common"
 )
 
-// history holds a finite amount of representations of the sudoku board, in
+// History holds a finite amount of representations of the sudoku board, in
 // order to be print for logging
-type history struct {
+type History struct {
 	buffer   [][][]byte
 	size     int
 	Capacity int
@@ -32,11 +34,11 @@ type history struct {
 
 // String returns a string representation of the last elements defined in the
 // size value
-func (h *history) String() string {
+func (h *History) String() string {
 	var sb strings.Builder
 
 	for _, entry := range h.buffer {
-		fmt.Fprintf(&sb, "%s\n", printSudoku(&entry))
+		fmt.Fprintf(&sb, "%s\n", common.PrintSudoku(&entry))
 	}
 
 	return sb.String()
@@ -44,13 +46,13 @@ func (h *history) String() string {
 
 // copyData copies the input data to a result variable, copiying each row
 // individually
-func (h *history) copyData(result *[][]byte, input [][]byte) {
+func (h *History) copyData(result *[][]byte, input [][]byte) {
 
-	*result = make([][]byte, 0, ROW_LENGTH)
+	*result = make([][]byte, 0, common.ROW_LENGTH)
 
 	// copy each row to avoid sharing the same underlying information
 	for _, row := range input {
-		newRow := make([]byte, COLUMN_LENGTH)
+		newRow := make([]byte, common.COLUMN_LENGTH)
 
 		copy(newRow, row)
 
@@ -58,8 +60,8 @@ func (h *history) copyData(result *[][]byte, input [][]byte) {
 	}
 }
 
-// push adds a new element to the history
-func (h *history) push(data [][]byte) {
+// Push adds a new element to the History
+func (h *History) Push(data [][]byte) {
 
 	// create copy of data for storage
 	var newData [][]byte

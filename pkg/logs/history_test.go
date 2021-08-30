@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package sudoku
+package logs
 
 import (
 	"testing"
@@ -30,7 +30,7 @@ func TestHistoryOrder(t *testing.T) {
 	var tempBoard [][]byte
 	var expectedHis string
 
-	hist := history{Capacity: 3}
+	hist := History{Capacity: 3}
 
 	tempBoard = [][]byte{
 		{'1', '.', '.', '.', '.', '.', '.', '.', '.'},
@@ -43,7 +43,7 @@ func TestHistoryOrder(t *testing.T) {
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 	}
-	hist.push(tempBoard)
+	hist.Push(tempBoard)
 
 	tempBoard = [][]byte{
 		{'1', '2', '.', '.', '.', '.', '.', '.', '.'},
@@ -56,7 +56,7 @@ func TestHistoryOrder(t *testing.T) {
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 	}
-	hist.push(tempBoard)
+	hist.Push(tempBoard)
 
 	tempBoard = [][]byte{
 		{'1', '2', '3', '.', '.', '.', '.', '.', '.'},
@@ -69,7 +69,7 @@ func TestHistoryOrder(t *testing.T) {
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 	}
-	hist.push(tempBoard)
+	hist.Push(tempBoard)
 
 	expectedHis = `1 . . . . . . . . 
 . . . . . . . . . 
@@ -119,7 +119,7 @@ func TestHistoryOrder(t *testing.T) {
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 		{'.', '.', '.', '.', '.', '.', '.', '.', '.'},
 	}
-	hist.push(tempBoard)
+	hist.Push(tempBoard)
 
 	expectedHis = `1 2 . . . . . . . 
 . . . . . . . . . 

@@ -20,6 +20,9 @@ package sudoku
 import (
 	"fmt"
 	"strings"
+
+	"github.com/slealq/sudokuSolver/pkg/common"
+	"github.com/slealq/sudokuSolver/pkg/logs"
 )
 
 // container is a single sudoku container from a sudoku board.
@@ -36,7 +39,7 @@ type container struct {
 	// are posible and concruent with the posibilities
 	// of near containers. Map the posibility with
 	// the coordinate where it's posible
-	restrictedValues map[string]map[Point]bool
+	restrictedValues map[string]map[common.Point]bool
 	id               string
 	observers        map[string]containerObserver
 	availableValues  *availableValues
@@ -64,12 +67,12 @@ func (s *container) Id() string {
 func (s *container) update(aCell *cell) {
 
 	// cell notification arrived
-	aLog := newLog(cellNotificationArrived, s.id, aCell.id, aCell.String())
+	aLog := logs.NewLog(logs.CellNotificationArrived, s.id, aCell.id, aCell.String())
 	aLog.Info()
 
 	// log the result at the end
 	defer func() {
-		aLog = newLog(containerAvailableValues, s.id, s.availValStr())
+		aLog = logs.NewLog(logs.ContainerAvailableValues, s.id, s.availValStr())
 		aLog.Info()
 	}()
 
@@ -77,7 +80,7 @@ func (s *container) update(aCell *cell) {
 	// enable again the previous value as available
 	if aCell.value == byte('.') {
 		if _, ok := (*s.availableValues)[aCell.preValue]; !ok {
-			aLog := newLog(cellPrevValueInvalid, aCell.id, string(aCell.preValue))
+			aLog := logs.NewLog(logs.CellPrevValueInvalid, aCell.id, string(aCell.preValue))
 			aLog.Warn()
 			return
 		}
@@ -90,16 +93,16 @@ func (s *container) update(aCell *cell) {
 	{
 		var available, ok bool
 		if available, ok = (*s.availableValues)[aCell.value]; !ok {
-			aLog := newLog(cellUpdateInvalidValue, s.id, aCell.String())
+			aLog := logs.NewLog(logs.CellUpdateInvalidValue, s.id, aCell.String())
 			aLog.Error()
-			panic(aLog.logMsg)
+			panic(aLog.Msg())
 		}
 
 		// double check that value is still available in the container
 		if !available {
-			aLog := newLog(containerValueNotAvailable, aCell.String(), s.id)
+			aLog := logs.NewLog(logs.ContainerValueNotAvailable, aCell.String(), s.id)
 			aLog.Error()
-			panic(aLog.logMsg)
+			panic(aLog.Msg())
 		}
 
 		(*s.availableValues)[aCell.value] = false
@@ -127,7 +130,7 @@ func (s *container) availValStr() string {
 func (s *container) addObserver(newObserver containerObserver) error {
 
 	if _, ok := s.observers[newObserver.Id()]; ok {
-		return fmt.Errorf(containerObserverAlreadyRegistered, newObserver.Id())
+		return fmt.Errorf(logs.ContainerObserverAlreadyRegistered, newObserver.Id())
 	}
 
 	s.observers[newObserver.Id()] = newObserver
@@ -140,7 +143,7 @@ func (s *container) addObserver(newObserver containerObserver) error {
 func (s *container) rmObserver(obs containerObserver) error {
 
 	if _, ok := s.observers[obs.Id()]; !ok {
-		return fmt.Errorf(containerObserverNotFound, obs.Id())
+		return fmt.Errorf(logs.ContainerObserverNotFound, obs.Id())
 	}
 
 	delete(s.observers, obs.Id())
@@ -159,14 +162,14 @@ func (s *container) notifyObservers() {
 func (s *container) create() {
 	s.numberSet = map[string]int{}
 	s.createPossibleValues()
-	s.restrictedValues = map[string]map[Point]bool{}
+	s.restrictedValues = map[string]map[common.Point]bool{}
 }
 
 // createPossibleValues stores
 func (s *container) createPossibleValues() {
 	result := map[string]bool{}
 
-	for value := range allValues {
+	for value := range common.AllValues {
 		if s.numberSet[value] == 0 {
 			result[value] = true
 		}
@@ -225,10 +228,10 @@ func (s *container) updatePossibleValues(value *string) {
 
 func (s *container) addRestricted(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
-		s.restrictedValues[value] = map[Point]bool{}
+		s.restrictedValues[value] = map[common.Point]bool{}
 	}
 
-	s.restrictedValues[value][Point{i, j}] = true
+	s.restrictedValues[value][common.Point{i, j}] = true
 }
 
 func (s *container) rmRestrictedValue(value string) {
@@ -243,25 +246,25 @@ func (s *container) rmRestrictedPoint(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
 		return
 	}
-	if _, ok := s.restrictedValues[value][Point{i, j}]; !ok {
+	if _, ok := s.restrictedValues[value][common.Point{i, j}]; !ok {
 		return
 	}
 
-	delete(s.restrictedValues[value], Point{i, j})
+	delete(s.restrictedValues[value], common.Point{i, j})
 }
 
-func (s *container) getUniqueRestricted() map[string]Point {
+func (s *container) getUniqueRestricted() map[string]common.Point {
 	// Return a map of value -> point that are unique to this
 	// container (That point can ONLY allow that value)
 
-	result := map[string]Point{}
+	result := map[string]common.Point{}
 
 	for value, pointSet := range s.restrictedValues {
 		if pointSet == nil {
 			break
 		}
 		if len(pointSet) == 1 {
-			keys := make([]Point, 0, len(pointSet))
+			keys := make([]common.Point, 0, len(pointSet))
 			for k := range pointSet {
 				keys = append(keys, k)
 			}

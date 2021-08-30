@@ -19,6 +19,9 @@ package sudoku
 
 import (
 	"fmt"
+
+	"github.com/slealq/sudokuSolver/pkg/common"
+	"github.com/slealq/sudokuSolver/pkg/logs"
 )
 
 // cell represents a single cell in the sudoku board
@@ -64,7 +67,7 @@ func (c *cell) Id() string {
 func (c *cell) addObserver(newObserver cellObserver) error {
 
 	if _, ok := c.observers[newObserver.Id()]; ok {
-		return fmt.Errorf(cellObserverAlreadyRegistered, newObserver.Id())
+		return fmt.Errorf(logs.CellObserverAlreadyRegistered, newObserver.Id())
 	}
 
 	c.observers[newObserver.Id()] = newObserver
@@ -77,7 +80,7 @@ func (c *cell) addObserver(newObserver cellObserver) error {
 func (c *cell) rmObserver(id string) error {
 
 	if _, ok := c.observers[id]; !ok {
-		return fmt.Errorf(cellObserverNotFound, id)
+		return fmt.Errorf(logs.CellObserverNotFound, id)
 	}
 
 	delete(c.observers, id)
@@ -90,7 +93,7 @@ func (c *cell) rmObserver(id string) error {
 func (c *cell) update(aContainer *container) {
 
 	// ignore notifications if
-	aLog := newLog(containerNotificationArrived, c.id, string(c.value), aContainer.id)
+	aLog := logs.NewLog(logs.ContainerNotificationArrived, c.id, string(c.value), aContainer.id)
 	aLog.Info()
 
 	// log the result at the end
@@ -102,7 +105,7 @@ func (c *cell) update(aContainer *container) {
 			availValStr = "nil"
 		}
 
-		aLog = newLog(cellAvailableValues, c.id, availValStr)
+		aLog = logs.NewLog(logs.CellAvailableValues, c.id, availValStr)
 		aLog.Info()
 	}()
 
@@ -118,10 +121,10 @@ func (c *cell) update(aContainer *container) {
 
 	// cell should have reference to three observers (containers), in order
 	// to update self available values
-	if len(c.observers) != CONTAINERS_PER_CELL {
-		aLog := newLog(notAllContainersAvailable, c.id)
+	if len(c.observers) != common.CONTAINERS_PER_CELL {
+		aLog := logs.NewLog(logs.NotAllContainersAvailable, c.id)
 		aLog.Error()
-		panic(aLog.logMsg)
+		panic(aLog.Msg())
 	}
 
 	// go through all values, verify if they are available or not by polling
@@ -176,9 +179,9 @@ func (c *cell) set(newValue byte) {
 
 	// panic if the cell is being updated with an invalid value
 	if _, ok := allowedValues[newValue]; !ok {
-		aLog := newLog(invalidUpdateValue, string(newValue))
+		aLog := logs.NewLog(logs.InvalidUpdateValue, string(newValue))
 		aLog.Error()
-		panic(aLog.logMsg)
+		panic(aLog.Msg())
 	}
 
 	// store value history

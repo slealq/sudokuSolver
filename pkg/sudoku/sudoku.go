@@ -20,6 +20,9 @@ package sudoku
 import (
 	"fmt"
 	"time"
+
+	"github.com/slealq/sudokuSolver/pkg/common"
+	"github.com/slealq/sudokuSolver/pkg/logs"
 )
 
 func isValidSudoku(data [][]byte) bool {
@@ -106,7 +109,7 @@ func isValidSudoku(data [][]byte) bool {
 
 // append [i]container and [j]container
 
-func getKeysFromRestricted(restricted map[string]Point) []string {
+func getKeysFromRestricted(restricted map[string]common.Point) []string {
 	keys := make([]string, 0, len(restricted))
 	for k := range restricted {
 		keys = append(keys, k)
@@ -178,7 +181,7 @@ func solveSudoku(data [][]byte) {
 		//         fmt.Printf("Is valid board? :%t\n", board.isValid())
 
 		if !filled {
-			aLog := newLog(callingBacktracking, board.isValid(), board.String())
+			aLog := logs.NewLog(logs.CallingBacktracking, board.isValid(), board.String())
 			aLog.Info()
 
 			board.Backtrack()

@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package sudoku
+package logs
 
 import (
 	"fmt"
@@ -58,7 +58,7 @@ type logger struct {
 }
 
 // newLog creates a new logger given the message provided
-func newLog(msg string, args ...interface{}) logger {
+func NewLog(msg string, args ...interface{}) logger {
 
 	// Check that sLogHandler has been initialized, if not do so.
 	if sLogHandler == nil {
@@ -89,3 +89,6 @@ func (l *logger) Info() {
 func (l *logger) Warn() {
 	l.logHandler.Warn.Println(l.logMsg)
 }
+
+// Msg returns the logMsg string
+func (l *logger) Msg() string { return l.logMsg }

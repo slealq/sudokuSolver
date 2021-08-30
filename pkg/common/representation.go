@@ -15,16 +15,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package sudoku
+package common
 
 import (
 	"fmt"
 	"strings"
 )
 
-// printSudoku takes a boardData as input, and returns a string representation
+// PrintSudoku takes a boardData as input, and returns a string representation
 // of the board
-func printSudoku(board *[][]byte) string {
+func PrintSudoku(board *[][]byte) string {
 
 	var sb strings.Builder
 

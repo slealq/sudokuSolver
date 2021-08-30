@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package sudoku
+package common
 
 const (
 	SMALL_SQUARE_SIZE   = 3
@@ -24,7 +24,7 @@ const (
 	CONTAINERS_PER_CELL = 3
 )
 
-var allValues = map[string]bool{"1": true,
+var AllValues = map[string]bool{"1": true,
 	"2": true,
 	"3": true,
 	"4": true,
@@ -41,6 +41,6 @@ type Point struct {
 }
 
 type Fill struct {
-	value int
-	point Point
+	Value int
+	Point Point
 }

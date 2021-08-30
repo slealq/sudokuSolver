@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/slealq/sudokuSolver/pkg/common"
+	"github.com/slealq/sudokuSolver/pkg/logs"
 )
 
 // Complete sudoku Board
@@ -32,7 +35,7 @@ type Board struct {
 	possibleValues  [9][9][]string
 
 	cells   [9][9]*cell
-	history history
+	history logs.History
 	debug   bool
 }
 
@@ -43,7 +46,7 @@ func newBoard(data *[][]byte) *Board {
 	b := &Board{}
 
 	// TODO: Maybe just enable with debug info
-	b.history = history{Capacity: 20}
+	b.history = logs.History{Capacity: 20}
 	b.data = data
 
 	b.newContainers()
@@ -62,9 +65,9 @@ func newBoard(data *[][]byte) *Board {
 func (b *Board) initCells() {
 
 	if b.data == nil {
-		aLog := newLog(failedToInitCells)
+		aLog := logs.NewLog(logs.FailedToInitCells)
 		aLog.Error()
-		panic(aLog.logMsg)
+		panic(aLog.Msg())
 	}
 
 	// register observers to all cells,
@@ -114,7 +117,7 @@ func (b *Board) addToContainers(i, j int, value string) {
 // updateHistory adds a new entry to the history if debug flag is enabled
 func (b *Board) updateHistory() {
 	if b.debug {
-		b.history.push(*b.data)
+		b.history.Push(*b.data)
 	}
 }
 
@@ -224,7 +227,7 @@ func (b *Board) calculatePossibleValues() {
 	}
 }
 
-func (b *Board) getUniqueRestrictedFromBox(i, j int) map[string]Point {
+func (b *Board) getUniqueRestrictedFromBox(i, j int) map[string]common.Point {
 	iIndexBox := i / 3
 	jIndexBox := j / 3
 
@@ -232,11 +235,11 @@ func (b *Board) getUniqueRestrictedFromBox(i, j int) map[string]Point {
 
 }
 
-func (b *Board) getUniqueRestrictedFromRow(i int) map[string]Point {
+func (b *Board) getUniqueRestrictedFromRow(i int) map[string]common.Point {
 	return b.rowContainer[i].getUniqueRestricted()
 }
 
-func (b *Board) getUniqueRestrictedFromCol(j int) map[string]Point {
+func (b *Board) getUniqueRestrictedFromCol(j int) map[string]common.Point {
 	return b.columnContainer[j].getUniqueRestricted()
 }
 
@@ -253,7 +256,7 @@ func (b *Board) calculatePossibleValuesInCoordinate(i, j int) *[]string {
 	rowPossibleValues := b.rowContainer[i].getPossibleValues()
 
 	result := []string{}
-	for value := range allValues {
+	for value := range common.AllValues {
 		if (*boxPossibleValues)[value] && (*columnPossibleValues)[value] && (*rowPossibleValues)[value] {
 			result = append(result, value)
 		}
@@ -278,28 +281,28 @@ func (b *Board) spacesLeft() int {
 	return spacesLeft
 }
 
-func (b *Board) GetFirstEmptyPlace() Point {
+func (b *Board) GetFirstEmptyPlace() common.Point {
 	for i := 0; i < 9; i++ {
 		for j := 0; j < 9; j++ {
 			if string((*b.data)[i][j]) == "." {
-				return Point{i, j}
+				return common.Point{i, j}
 			}
 		}
 	}
 	// This should not happen
-	return Point{-1, -1}
+	return common.Point{-1, -1}
 }
 
 // ApplyTranslation takes a translation and applies it to all containers
 // and to the board
-func (b *Board) ApplyTranslation(translation Fill) {
-	b.simpleAdd(translation.point.X, translation.point.Y, strconv.Itoa(translation.value))
+func (b *Board) ApplyTranslation(translation common.Fill) {
+	b.simpleAdd(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
 }
 
 // ReverseTranslation takes a translation and reverts it from all containers
 // and the board
-func (b *Board) ReverseTranslation(translation Fill) {
-	b.simpleRm(translation.point.X, translation.point.Y, strconv.Itoa(translation.value))
+func (b *Board) ReverseTranslation(translation common.Fill) {
+	b.simpleRm(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
 }
 
 // Backtrack performs a backtracking algorithm to the current board values,
@@ -310,13 +313,13 @@ func (b *Board) Backtrack() {
 	// Check board is valid before calling backtracking, otherwise it will
 	// never be able to solve
 	if !b.isValid() {
-		aLog := newLog(cannotBacktrack, b.String())
+		aLog := logs.NewLog(logs.CannotBacktrack, b.String())
 		aLog.Error()
 		return
 	}
 
 	// Holds the translations made, so they can be reversed if required
-	translationInOrder := []Fill{}
+	translationInOrder := []common.Fill{}
 	currentTrans := 0
 
 	// newPos flag is turned on when the current position hasn't begun
@@ -326,14 +329,14 @@ func (b *Board) Backtrack() {
 
 	for b.spacesLeft() != 0 || b.isValid() == false {
 
-		aLog := newLog(backTrackingStats, len(translationInOrder), newPos)
+		aLog := logs.NewLog(logs.BackTrackingStats, len(translationInOrder), newPos)
 		aLog.Info()
 
 		if !newPos {
 			// since newPos flag is false, make a new Fill and add it
 			// to the translations
 			tempPoint := b.GetFirstEmptyPlace()
-			fill := Fill{value: 1, point: tempPoint}
+			fill := common.Fill{Value: 1, Point: tempPoint}
 
 			translationInOrder = append(translationInOrder, fill)
 
@@ -342,7 +345,7 @@ func (b *Board) Backtrack() {
 
 		// When it's not the first backtracking, and the board is currently
 		// valid, advance to the next position
-		if b.isValid() && translationInOrder[currentTrans].value < 9 {
+		if b.isValid() && translationInOrder[currentTrans].Value < 9 {
 			// continue back tracking
 			currentTrans++
 			newPos = false
@@ -353,10 +356,10 @@ func (b *Board) Backtrack() {
 		{
 			newPos = true
 
-			if translationInOrder[currentTrans].value == 9 {
+			if translationInOrder[currentTrans].Value == 9 {
 				if len(translationInOrder) <= 1 {
 
-					aLog := newLog(backTrackWentWrong, b.debug,
+					aLog := logs.NewLog(logs.BackTrackWentWrong, b.debug,
 						b.history.String())
 					aLog.Error()
 					break
@@ -376,7 +379,7 @@ func (b *Board) Backtrack() {
 			// We'll reverse the translation, increase the value, and apply it
 			// back again
 			b.ReverseTranslation(translationInOrder[currentTrans])
-			translationInOrder[currentTrans].value++
+			translationInOrder[currentTrans].Value++
 			b.ApplyTranslation(translationInOrder[currentTrans])
 		}
 	}
