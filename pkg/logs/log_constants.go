@@ -18,6 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package logs
 
 var (
+	// common.go
+	NoNextValue = "Reached the end of patch iterator: %+v"
+
 	// cell.go
 	CellObserverAlreadyRegistered = "Cell observer id '%s' has already been registered"
 	CellObserverNotFound          = "Cell observer id '%s' was not found"
@@ -27,10 +30,10 @@ var (
 	NotAllContainersAvailable     = "Cell '%-5s received an update, but doesn't have complete references to containers"
 
 	// board.go
-	BackTrackWentWrong = "Backtracking went wrong; debug=%v; history=\n%s"
-	BackTrackingStats  = "Backtracking translations: %d, newPos: %v"
-	CannotBacktrack    = "Cannot backtrack. Board is invalid:\n%s"
-	FailedToInitCells  = "Failed initializing cells"
+	BackTrackingStats     = "Backtracking translations: %d, moveForward: %v, board:\n%s"
+	CannotBacktrack       = "Cannot backtrack. Board is invalid:\n%s"
+	FailedToInitCells     = "Failed initializing cells"
+	DebuggingStateChanged = "Debugging state changed, debug:%v"
 
 	// sudoku.go
 	CallingBacktracking = "Calling bactracking, isValid: %v, board:\n%s"
@@ -46,11 +49,21 @@ var (
 
 	// solver.go
 	DeterministicApprNoMoreSteps = "Cannot fully solve sudoku with deterministic steps"
+	StartNewBackTrackPos         = "Adding new position during backtrack | newCoord: %v, availableValues: %v |"
+	NextPatch                    = "Following patch to apply is patch: %s"
+
+	// history.go
+	BacktrackingSet     = "Backtracking set value: %s in coord: %v"
+	BacktrackingReverse = "Backtracking reverse value: %s in coord: %v"
+
+	// backtrack.go
+	BackTrackWentWrong = "Backtracking went wrong; debug:%v; history:\n%s"
 )
 
 var (
 	LOG_FILENAME   = "logs.txt"
 	INFO_HEADER    = "INFO: "
+	DEBUG_HEADER   = "DEBUG: "
 	WARNING_HEADER = "WARNING: "
 	ERROR_HEADER   = "ERROR: "
 )

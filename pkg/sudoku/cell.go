@@ -24,6 +24,22 @@ import (
 	"github.com/slealq/sudokuSolver/pkg/logs"
 )
 
+// allowedValues are the values that the cell can have
+var (
+	allowedValues = map[byte]bool{
+		'.': true,
+		'1': true,
+		'2': true,
+		'3': true,
+		'4': true,
+		'5': true,
+		'6': true,
+		'7': true,
+		'8': true,
+		'9': true,
+	}
+)
+
 // cell represents a single cell in the sudoku board
 type cell struct {
 	preValue, value byte
@@ -92,9 +108,13 @@ func (c *cell) rmObserver(id string) error {
 // containerObserver interface.
 func (c *cell) update(aContainer *container) {
 
-	// ignore notifications if
-	aLog := logs.NewLog(logs.ContainerNotificationArrived, c.id, string(c.value), aContainer.id)
-	aLog.Info()
+	aLog := logs.NewLog(
+		logs.ContainerNotificationArrived,
+		c.id,
+		string(c.value),
+		aContainer.id,
+	)
+	aLog.Debug()
 
 	// log the result at the end
 	defer func() {
@@ -106,7 +126,7 @@ func (c *cell) update(aContainer *container) {
 		}
 
 		aLog = logs.NewLog(logs.CellAvailableValues, c.id, availValStr)
-		aLog.Info()
+		aLog.Debug()
 	}()
 
 	// safely ignore update if current cell has a value
@@ -163,19 +183,6 @@ func (c *cell) notifyObservers() {
 
 // set the value of the cell, and notify all observers about the change
 func (c *cell) set(newValue byte) {
-
-	allowedValues := map[byte]bool{
-		'.': true,
-		'1': true,
-		'2': true,
-		'3': true,
-		'4': true,
-		'5': true,
-		'6': true,
-		'7': true,
-		'8': true,
-		'9': true,
-	}
 
 	// panic if the cell is being updated with an invalid value
 	if _, ok := allowedValues[newValue]; !ok {

@@ -109,7 +109,7 @@ func isValidSudoku(data [][]byte) bool {
 
 // append [i]container and [j]container
 
-func getKeysFromRestricted(restricted map[string]common.Point) []string {
+func getKeysFromRestricted(restricted map[string]common.Coordinate) []string {
 	keys := make([]string, 0, len(restricted))
 	for k := range restricted {
 		keys = append(keys, k)
@@ -121,7 +121,7 @@ func solveSudoku(data [][]byte) {
 	start := time.Now()
 
 	board := NewBoard(&data)
-	board.debug = true
+	board.SetDebug(true)
 
 	// fmt.Printf("Spaces left: %d\n", board.spacesLeft())
 	filled := false
@@ -184,7 +184,7 @@ func solveSudoku(data [][]byte) {
 			aLog := logs.NewLog(logs.CallingBacktracking, board.isValid(), board.String())
 			aLog.Info()
 
-			board.Backtrack()
+			// board.Backtrack()
 			break
 		}
 		filled = false

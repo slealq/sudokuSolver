@@ -17,21 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
-const (
-	SMALL_SQUARE_SIZE   = 3
-	ROW_LENGTH          = 9
-	COLUMN_LENGTH       = 9
-	CONTAINERS_PER_CELL = 3
-)
-
-var AllValues = map[string]bool{
-	"1": true,
-	"2": true,
-	"3": true,
-	"4": true,
-	"5": true,
-	"6": true,
-	"7": true,
-	"8": true,
-	"9": true,
+type Coordinate struct {
+	X int
+	Y int
 }

@@ -24,9 +24,11 @@ import (
 )
 
 type logHandler struct {
-	Info  *log.Logger
-	Warn  *log.Logger
-	Error *log.Logger
+	Info             *log.Logger
+	Debug            *log.Logger
+	Warn             *log.Logger
+	Error            *log.Logger
+	activeSeverities map[string]bool
 }
 
 // logHandler singleton makes sure all loggers use the same Loggers
@@ -34,15 +36,30 @@ var sLogHandler *logHandler
 
 // init initializes the sLogHandler singleton, which is used by all loggers
 func initLogHandler() {
-	sLogHandler = &logHandler{}
 
-	file, err := os.OpenFile(LOG_FILENAME, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	// By default, the activeSeverities are set to enable all except debug
+	activeSeverities := map[string]bool{
+		"Info":  true,
+		"Debug": false,
+		"Warn":  true,
+		"Error": true,
+	}
+
+	sLogHandler = &logHandler{activeSeverities: activeSeverities}
+
+	file, err := os.OpenFile(
+		LOG_FILENAME,
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0666,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	sLogHandler.Info =
 		log.New(file, INFO_HEADER, log.Ldate|log.Ltime|log.Lshortfile)
+	sLogHandler.Debug =
+		log.New(file, DEBUG_HEADER, log.Ldate|log.Ltime|log.Lshortfile)
 	sLogHandler.Warn =
 		log.New(file, WARNING_HEADER, log.Ldate|log.Ltime|log.Lshortfile)
 	sLogHandler.Error =
@@ -72,22 +89,55 @@ func NewLog(msg string, args ...interface{}) logger {
 	}
 }
 
-// Error logs an error message using the sLogHandler which should be a
-// singleton
-func (l *logger) Error() {
-	l.logHandler.Error.Println(l.logMsg)
+// isSeverityActivated returns true if the given severity is activated, false
+// otherwise
+func (l *logger) isSeverityActivated(tag string) bool {
+
+	if activated, ok := l.logHandler.activeSeverities[tag]; ok {
+		return activated
+	}
+
+	return false
 }
 
 // Info logs an info message using the sLogHandler which should be a
 // singleton
 func (l *logger) Info() {
+	if !l.isSeverityActivated("Info") {
+		return
+	}
+
 	l.logHandler.Info.Println(l.logMsg)
 }
 
-// Warn logs an warning message using the sLogHandler which should be a
+// Debug logs a debug message using the sLogHandler which should be a
+// singleton
+func (l *logger) Debug() {
+	if !l.isSeverityActivated("Debug") {
+		return
+	}
+
+	l.logHandler.Debug.Println(l.logMsg)
+}
+
+// Warn logs a warning message using the sLogHandler which should be a
 // singleton
 func (l *logger) Warn() {
+	if !l.isSeverityActivated("Warn") {
+		return
+	}
+
 	l.logHandler.Warn.Println(l.logMsg)
+}
+
+// Error logs an error message using the sLogHandler which should be a
+// singleton
+func (l *logger) Error() {
+	if !l.isSeverityActivated("Error") {
+		return
+	}
+
+	l.logHandler.Error.Println(l.logMsg)
 }
 
 // Msg returns the logMsg string

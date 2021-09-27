@@ -20,6 +20,8 @@ package sudoku
 import (
 	"fmt"
 	"strings"
+
+	"github.com/slealq/sudokuSolver/pkg/iter"
 )
 
 type AvailableValues map[byte]bool
@@ -41,14 +43,14 @@ func newAvailableValues() *AvailableValues {
 	}
 }
 
-// Unique returns a byte value if there's only one available value left
-// otherwise it returns an error
-func (a *AvailableValues) Unique() (byte, bool) {
+// NewIterator returns an iterator with the available values
+func (a *AvailableValues) NewIterator() *iter.ByteIterator {
 
-	// Verify the map is not nil, otherwise return false
-	if a == nil {
-		return byte('.'), false
-	}
+	return iter.NewByteIterator(a.Slice())
+}
+
+// Slice returns a slice with the available values
+func (a *AvailableValues) Slice() []byte {
 
 	// For performance, create a slice with the space required
 	availables := make([]byte, 0, 9)
@@ -59,6 +61,20 @@ func (a *AvailableValues) Unique() (byte, bool) {
 			availables = append(availables, value)
 		}
 	}
+
+	return availables
+}
+
+// Unique returns a byte value if there's only one available value left
+// otherwise it returns an error
+func (a *AvailableValues) Unique() (byte, bool) {
+
+	// Verify the map is not nil, otherwise return false
+	if a == nil {
+		return byte('.'), false
+	}
+
+	availables := a.Slice()
 
 	// If only one available value, return it
 	if len(availables) == 1 {

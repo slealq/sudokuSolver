@@ -39,7 +39,7 @@ type container struct {
 	// are posible and concruent with the posibilities
 	// of near containers. Map the posibility with
 	// the coordinate where it's posible
-	restrictedValues map[string]map[common.Point]bool
+	restrictedValues map[string]map[common.Coordinate]bool
 	id               string
 	observers        map[string]containerObserver
 	availableValues  *AvailableValues
@@ -67,21 +67,30 @@ func (s *container) Id() string {
 func (s *container) update(aCell *cell) {
 
 	// cell notification arrived
-	aLog := logs.NewLog(logs.CellNotificationArrived, s.id, aCell.id, aCell.String())
-	aLog.Info()
+	aLog := logs.NewLog(
+		logs.CellNotificationArrived,
+		s.id,
+		aCell.id,
+		aCell.String(),
+	)
+	aLog.Debug()
 
 	// log the result at the end
 	defer func() {
 		aLog = logs.NewLog(logs.ContainerAvailableValues, s.id, s.availValStr())
-		aLog.Info()
+		aLog.Debug()
 	}()
 
 	// case where the update removes a value from the board, in which case
 	// enable again the previous value as available
 	if aCell.value == byte('.') {
 		if _, ok := (*s.availableValues)[aCell.preValue]; !ok {
-			aLog := logs.NewLog(logs.CellPrevValueInvalid, aCell.id, string(aCell.preValue))
-			aLog.Warn()
+			aLog := logs.NewLog(
+				logs.CellPrevValueInvalid,
+				aCell.id,
+				string(aCell.preValue),
+			)
+			aLog.Debug()
 			return
 		}
 
@@ -130,7 +139,10 @@ func (s *container) availValStr() string {
 func (s *container) addObserver(newObserver containerObserver) error {
 
 	if _, ok := s.observers[newObserver.Id()]; ok {
-		return fmt.Errorf(logs.ContainerObserverAlreadyRegistered, newObserver.Id())
+		return fmt.Errorf(
+			logs.ContainerObserverAlreadyRegistered,
+			newObserver.Id(),
+		)
 	}
 
 	s.observers[newObserver.Id()] = newObserver
@@ -162,7 +174,7 @@ func (s *container) notifyObservers() {
 func (s *container) create() {
 	s.numberSet = map[string]int{}
 	s.createPossibleValues()
-	s.restrictedValues = map[string]map[common.Point]bool{}
+	s.restrictedValues = map[string]map[common.Coordinate]bool{}
 }
 
 // createPossibleValues stores
@@ -228,10 +240,10 @@ func (s *container) updatePossibleValues(value *string) {
 
 func (s *container) addRestricted(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
-		s.restrictedValues[value] = map[common.Point]bool{}
+		s.restrictedValues[value] = map[common.Coordinate]bool{}
 	}
 
-	s.restrictedValues[value][common.Point{X: i, Y: j}] = true
+	s.restrictedValues[value][common.Coordinate{X: i, Y: j}] = true
 }
 
 func (s *container) rmRestrictedValue(value string) {
@@ -246,25 +258,25 @@ func (s *container) rmRestrictedPoint(i, j int, value string) {
 	if s.restrictedValues[value] == nil {
 		return
 	}
-	if _, ok := s.restrictedValues[value][common.Point{X: i, Y: j}]; !ok {
+	if _, ok := s.restrictedValues[value][common.Coordinate{X: i, Y: j}]; !ok {
 		return
 	}
 
-	delete(s.restrictedValues[value], common.Point{X: i, Y: j})
+	delete(s.restrictedValues[value], common.Coordinate{X: i, Y: j})
 }
 
-func (s *container) getUniqueRestricted() map[string]common.Point {
+func (s *container) getUniqueRestricted() map[string]common.Coordinate {
 	// Return a map of value -> point that are unique to this
 	// container (That point can ONLY allow that value)
 
-	result := map[string]common.Point{}
+	result := map[string]common.Coordinate{}
 
 	for value, pointSet := range s.restrictedValues {
 		if pointSet == nil {
 			break
 		}
 		if len(pointSet) == 1 {
-			keys := make([]common.Point, 0, len(pointSet))
+			keys := make([]common.Coordinate, 0, len(pointSet))
 			for k := range pointSet {
 				keys = append(keys, k)
 			}

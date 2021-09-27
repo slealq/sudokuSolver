@@ -18,11 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package solver
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/slealq/sudokuSolver/pkg/common"
 	"github.com/slealq/sudokuSolver/pkg/logs"
 	"github.com/slealq/sudokuSolver/pkg/sudoku"
+	"github.com/slealq/sudokuSolver/pkg/version"
 )
 
 type Solver struct {
@@ -55,7 +57,8 @@ func (s *Solver) Deterministic() error {
 		// only one possible value. If so, fill it
 		for i := 0; i < common.ROW_LENGTH; i++ {
 			for j := 0; j < common.COLUMN_LENGTH; j++ {
-				availableValues = s.board.GetAvailableValues(i, j)
+				availableValues =
+					s.board.GetAvailableValues(common.Coordinate{X: i, Y: j})
 
 				if value, unique := availableValues.Unique(); unique {
 					fillFound = true
@@ -74,4 +77,80 @@ func (s *Solver) Deterministic() error {
 	}
 
 	return nil
+}
+
+// Backtrack performs a backtracking algorithm to the current board values,
+// in which it tests values and goes backwards if it reaches a point where the
+// values make the board invalid. Backtracking should end when all the cells
+// in the board are filled
+func (s *Solver) Backtrack() {
+	// Check board is valid before calling backtracking, otherwise it will
+	// never be able to solve
+	// TODO: This might not be required if the board is never able to be
+	// invalid
+	if !s.board.IsValid() {
+		aLog := logs.NewLog(logs.CannotBacktrack, s.board.String())
+		aLog.Error()
+		return
+	}
+
+	backtracker := newBackTracker(s.board)
+
+	// moveForward flag is turned on when the current position hasn't begun
+	// testing new numbers yet. Meaning we are arriving at this position for
+	// the first time.
+	moveForward := true
+	var areMoreValuesAvailable bool
+	var nextPatch *version.Patch
+	var reachedEnd bool
+
+	for s.board.SpacesLeft() != 0 {
+
+		aLog := logs.NewLog(
+			logs.BackTrackingStats,
+			backtracker.history.Len(),
+			moveForward,
+			s.board.String(),
+		)
+		aLog.Info()
+
+		if moveForward {
+			_, newCoord := s.board.FirstEmptyPlace()
+			it := s.board.GetAvailableValues(newCoord).NewIterator()
+
+			aLog := logs.NewLog(
+				logs.StartNewBackTrackPos,
+				newCoord,
+				s.board.GetAvailableValues(newCoord).String(),
+			)
+			aLog.Info()
+
+			patch := version.NewPatch(newCoord, it)
+
+			areMoreValuesAvailable = !(it.End())
+			nextPatch = patch
+
+		} else {
+			previousPatch := backtracker.history.Reverse()
+
+			areMoreValuesAvailable = !(previousPatch.Iter.End())
+			nextPatch = previousPatch
+		}
+
+		json.Marshal(nextPatch)
+		aLog = logs.NewLog(
+			logs.NextPatch,
+			nextPatch,
+		)
+		aLog.Info()
+
+		moveForward, reachedEnd = backtracker.NextStep(
+			areMoreValuesAvailable,
+			nextPatch,
+		)
+
+		if reachedEnd {
+			break
+		}
+	}
 }

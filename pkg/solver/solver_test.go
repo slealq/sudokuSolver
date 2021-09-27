@@ -85,3 +85,21 @@ func TestDeterministic(t *testing.T) {
 		t.Errorf("board:\n%sis not the expected\n%s", boardStr, expectedStr)
 	}
 }
+
+// TestBacktrack verifies that the Backtrack algorithm works as expected
+func TestBacktrack(t *testing.T) {
+
+	board := newBoard()
+	board.SetDebug(true)
+
+	if board.IsValid() == false {
+		t.Errorf("Board expected to be valid")
+	}
+
+	solver := NewSolver(board)
+	solver.Backtrack()
+
+	if boardStr := common.PrintSudoku(board.Data()); boardStr != expectedStr {
+		t.Errorf("board:\n%sis not the expected\n%s", boardStr, expectedStr)
+	}
+}

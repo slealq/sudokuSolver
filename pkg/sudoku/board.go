@@ -19,7 +19,6 @@ package sudoku
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/slealq/sudokuSolver/pkg/common"
@@ -35,8 +34,8 @@ type Board struct {
 	possibleValues  [9][9][]string
 
 	cells   [9][9]*cell
-	history logs.History
 	debug   bool
+	History logs.History
 }
 
 // NewBoard creates a new board, instanciates containers, adds ids to them
@@ -46,7 +45,7 @@ func NewBoard(data *[][]byte) *Board {
 	b := &Board{}
 
 	// TODO: Maybe just enable with debug info
-	b.history = logs.History{Capacity: 20}
+	b.History = logs.History{Capacity: 20}
 	b.data = data
 
 	b.newContainers()
@@ -61,13 +60,26 @@ func NewBoard(data *[][]byte) *Board {
 	return b
 }
 
+// Debug returns the debug Value
+func (b *Board) Debug() bool {
+	return b.debug
+}
+
+// Set debug value of the board
+func (b *Board) SetDebug(debug bool) {
+	b.debug = debug
+
+	aLog := logs.NewLog(logs.DebuggingStateChanged, b.debug)
+	aLog.Info()
+}
+
 // String satifies the stringer interface
 func (b *Board) String() string {
 	var sb strings.Builder
 
 	firstRow := true
 
-	for i := 0; i < 9; i++ {
+	for i := 0; i < common.ROW_LENGTH; i++ {
 		if firstRow {
 			fmt.Fprintf(&sb, "  | ")
 			for k := 0; k < 9; k++ {
@@ -84,7 +96,7 @@ func (b *Board) String() string {
 
 		fmt.Fprintf(&sb, "%d | ", i)
 
-		for j := 0; j < 9; j++ {
+		for j := 0; j < common.COLUMN_LENGTH; j++ {
 			fmt.Fprintf(&sb, "%s ", string((*b.data)[i][j]))
 		}
 		fmt.Fprintf(&sb, "\n")
@@ -94,8 +106,22 @@ func (b *Board) String() string {
 }
 
 // GetAvailableValues returns the available values of a given cell position
-func (b *Board) GetAvailableValues(i, j int) *AvailableValues {
-	return b.cells[i][j].availableValues
+func (b *Board) GetAvailableValues(coord common.Coordinate) *AvailableValues {
+	return b.cells[coord.X][coord.Y].availableValues
+}
+
+// FirstEmptyPlace returns the first coordinate that is available and true if
+// it's available, false otherwise
+func (b *Board) FirstEmptyPlace() (bool, common.Coordinate) {
+
+	for i := 0; i < common.ROW_LENGTH; i++ {
+		for j := 0; j < common.COLUMN_LENGTH; j++ {
+			if b.cells[i][j].get() == byte('.') {
+				return true, common.Coordinate{X: i, Y: j}
+			}
+		}
+	}
+	return false, common.Coordinate{}
 }
 
 // Set sets a value in the board, given the coordinate and the value
@@ -110,8 +136,8 @@ func (b *Board) Set(i, j int, value byte) {
 // SpacesLeft returns the amount of positions left empty in the board
 func (b *Board) SpacesLeft() int {
 	var spacesLeft int
-	for i := 0; i < 9; i++ {
-		for j := 0; j < 9; j++ {
+	for i := 0; i < common.ROW_LENGTH; i++ {
+		for j := 0; j < common.COLUMN_LENGTH; j++ {
 			if string((*b.data)[i][j]) == "." {
 				spacesLeft++
 			}
@@ -126,13 +152,15 @@ func (b *Board) Data() *[][]byte { return b.data }
 // newContainers creates all the containers and initializes them with the
 // corresponding ids
 func (b *Board) newContainers() {
-	for i := 0; i < 9; i++ {
+	for i := 0; i < common.ROW_LENGTH; i++ {
 		b.rowContainer[i] = newContainer(fmt.Sprintf("row_%d", i))
-		for j := 0; j < 9; j++ {
-			b.boxContainer[i/3][j/3] = newContainer(fmt.Sprintf("box_%di_%dj", i/3, j/3))
+		for j := 0; j < common.COLUMN_LENGTH; j++ {
+			b.boxContainer[i/3][j/3] = newContainer(
+				fmt.Sprintf("box_%di_%dj", i/3, j/3),
+			)
 		}
 	}
-	for j := 0; j < 9; j++ {
+	for j := 0; j < common.COLUMN_LENGTH; j++ {
 		b.columnContainer[j] = newContainer(fmt.Sprintf("col_%d", j))
 	}
 }
@@ -195,115 +223,23 @@ func (b *Board) addToContainers(i, j int, value string) {
 
 // updateHistory adds a new entry to the history if debug flag is enabled
 func (b *Board) updateHistory() {
-	if b.debug {
-		b.history.Push(*b.data)
+	if b.Debug() {
+		b.History.Push(*b.data)
 	}
 }
 
 // ========================= REFACTOR BELOW ===================================
 
-// ApplyTranslation takes a translation and applies it to all containers
-// and to the board
-func (b *Board) ApplyTranslation(translation common.Fill) {
-	b.simpleAdd(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
-}
-
-// ReverseTranslation takes a translation and reverts it from all containers
-// and the board
-func (b *Board) ReverseTranslation(translation common.Fill) {
-	b.simpleRm(translation.Point.X, translation.Point.Y, strconv.Itoa(translation.Value))
-}
-
-// Backtrack performs a backtracking algorithm to the current board values,
-// in which it tests values and goes backwards if it reaches a point where the
-// values make the board invalid. Backtracking should end when all the cells
-// in the board are filled
-func (b *Board) Backtrack() {
-	// Check board is valid before calling backtracking, otherwise it will
-	// never be able to solve
-	if !b.isValid() {
-		aLog := logs.NewLog(logs.CannotBacktrack, b.String())
-		aLog.Error()
-		return
-	}
-
-	// Holds the translations made, so they can be reversed if required
-	translationInOrder := []common.Fill{}
-	currentTrans := 0
-
-	// newPos flag is turned on when the current position hasn't begun
-	// testing new numbers yet. Meaning we are arriving at this position for
-	// the first time.
-	newPos := false
-
-	for b.SpacesLeft() != 0 || b.isValid() == false {
-
-		aLog := logs.NewLog(logs.BackTrackingStats, len(translationInOrder), newPos)
-		aLog.Info()
-
-		if !newPos {
-			// since newPos flag is false, make a new Fill and add it
-			// to the translations
-			tempPoint := b.GetFirstEmptyPlace()
-			fill := common.Fill{Value: 1, Point: tempPoint}
-
-			translationInOrder = append(translationInOrder, fill)
-
-			b.ApplyTranslation(fill)
-		}
-
-		// When it's not the first backtracking, and the board is currently
-		// valid, advance to the next position
-		if b.isValid() && translationInOrder[currentTrans].Value < 9 {
-			// continue back tracking
-			currentTrans++
-			newPos = false
-
-		} else
-		// If board is not valid, then remove current translation and go
-		// backwards until a new valid position is reached
-		{
-			newPos = true
-
-			if translationInOrder[currentTrans].Value == 9 {
-				if len(translationInOrder) <= 1 {
-
-					aLog := logs.NewLog(logs.BackTrackWentWrong, b.debug,
-						b.history.String())
-					aLog.Error()
-					break
-				}
-				// remove this element
-				b.ReverseTranslation(translationInOrder[currentTrans])
-				translationInOrder = translationInOrder[:len(translationInOrder)-1]
-				currentTrans--
-
-				// increase the value of the previous
-			}
-
-			// At this point, currentTrans should have already been decremented
-			// so it's time to increase previous value IF that value is able
-			// to increase. If not, move backwards further
-
-			// We'll reverse the translation, increase the value, and apply it
-			// back again
-			b.ReverseTranslation(translationInOrder[currentTrans])
-			translationInOrder[currentTrans].Value++
-			b.ApplyTranslation(translationInOrder[currentTrans])
-		}
-	}
-}
-
-func (b *Board) GetFirstEmptyPlace() common.Point {
+func (b *Board) GetFirstEmptyPlace() common.Coordinate {
 	for i := 0; i < 9; i++ {
 		for j := 0; j < 9; j++ {
 			if string((*b.data)[i][j]) == "." {
-				return common.Point{X: i, Y: j}
+				return common.Coordinate{X: i, Y: j}
 			}
 		}
 	}
 	// This should not happen
-	return common.Point{X: -1, Y: -1}
+	return common.Coordinate{X: -1, Y: -1}
 }
 
 func (b *Board) add(i, j int, value string) {
@@ -398,7 +334,9 @@ func (b *Board) calculatePossibleValues() {
 	}
 }
 
-func (b *Board) getUniqueRestrictedFromBox(i, j int) map[string]common.Point {
+func (b *Board) getUniqueRestrictedFromBox(
+	i, j int,
+) map[string]common.Coordinate {
 	iIndexBox := i / 3
 	jIndexBox := j / 3
 
@@ -406,11 +344,11 @@ func (b *Board) getUniqueRestrictedFromBox(i, j int) map[string]common.Point {
 
 }
 
-func (b *Board) getUniqueRestrictedFromRow(i int) map[string]common.Point {
+func (b *Board) getUniqueRestrictedFromRow(i int) map[string]common.Coordinate {
 	return b.rowContainer[i].getUniqueRestricted()
 }
 
-func (b *Board) getUniqueRestrictedFromCol(j int) map[string]common.Point {
+func (b *Board) getUniqueRestrictedFromCol(j int) map[string]common.Coordinate {
 	return b.columnContainer[j].getUniqueRestricted()
 }
 
@@ -428,7 +366,8 @@ func (b *Board) calculatePossibleValuesInCoordinate(i, j int) *[]string {
 
 	result := []string{}
 	for value := range common.AllValues {
-		if (*boxPossibleValues)[value] && (*columnPossibleValues)[value] && (*rowPossibleValues)[value] {
+		if (*boxPossibleValues)[value] && (*columnPossibleValues)[value] &&
+			(*rowPossibleValues)[value] {
 			result = append(result, value)
 		}
 	}
